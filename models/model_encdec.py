@@ -9,7 +9,7 @@ from typing import Optional, List
 from torch import nn, Tensor
 
 
-class Transformer(nn.Module):
+class model_encdec(nn.Module):
 
     def __init__(self, settings, d_model=512, nhead=8, num_encoder_layers=6,
                  num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
@@ -18,7 +18,7 @@ class Transformer(nn.Module):
 
         super().__init__()
 
-        # self.name_model = 'autoencoder'
+        self.name_model = 'autoencoder'
         # self.use_cuda = settings["use_cuda"]
 
         self.dim_embedding_key = settings["dim_embedding_key"]
