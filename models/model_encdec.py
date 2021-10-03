@@ -82,9 +82,9 @@ class model_encdec(nn.Module):
         memory2 = self.encoder_fut(src, src_key_padding_mask=mask, pos=pos_embed)
 
 
-        hs = self.decoder(tgt, memory1, memory2, memory_key_padding_mask=mask,
+        hs = self.decoder(tgt,  memory2, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
-        return hs.transpose(1, 2), memory1.permute(1, 2, 0).view(bs, c, h, w), memory2.permute(1, 2, 0).view(bs, c, h, w)
+        return hs.transpose(1, 2), memory2.permute(1, 2, 0).view(bs, c, h, w)
 
 
 
@@ -122,7 +122,7 @@ class TransformerDecoder(nn.Module):
         self.norm = norm
         self.return_intermediate = return_intermediate
 
-    def forward(self, tgt, memory1,memory2,
+    def forward(self, tgt, memory2,
                 tgt_mask: Optional[Tensor] = None,
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
@@ -134,7 +134,7 @@ class TransformerDecoder(nn.Module):
         intermediate = []
 
         for layer in self.layers:
-            output = layer(output, memory1,memory2, tgt_mask=tgt_mask,
+            output = layer(output, memory2, tgt_mask=tgt_mask,
                            memory_mask=memory_mask,
                            tgt_key_padding_mask=tgt_key_padding_mask,
                            memory_key_padding_mask=memory_key_padding_mask,
@@ -262,7 +262,7 @@ class TransformerDecoderLayer(nn.Module):
         tgt = self.norm3(tgt)
         return tgt
 
-    def forward_pre(self, tgt, memory1,
+    def forward_pre(self, tgt, memory2,
                     tgt_mask: Optional[Tensor] = None,
                     memory_mask: Optional[Tensor] = None,
                     tgt_key_padding_mask: Optional[Tensor] = None,
@@ -276,8 +276,8 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout1(tgt2)
         tgt2 = self.norm2(tgt)
         tgt2 = self.multihead_attn(query=self.with_pos_embed(tgt2, query_pos),
-                                   key=self.with_pos_embed(memory1, pos),
-                                   value=memory1, attn_mask=memory_mask,
+                                   key=self.with_pos_embed(memory2, pos),
+                                   value=memory2, attn_mask=memory_mask,
                                    key_padding_mask=memory_key_padding_mask)[0]
         tgt = tgt + self.dropout2(tgt2)
         tgt2 = self.norm3(tgt)
