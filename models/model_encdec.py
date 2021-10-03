@@ -75,15 +75,15 @@ class model_encdec(nn.Module):
         mask = mask.flatten(1)
 
         tgt = torch.zeros_like(query_embed)
-        memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
+        #memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
 
         memory1 = self.encoder_past(src, src_key_padding_mask=mask, pos=pos_embed)
         memory2 = self.encoder_fut(src, src_key_padding_mask=mask, pos=pos_embed)
 
 
-        hs = self.decoder(tgt, memory1,memory2, memory_key_padding_mask=mask,
+        hs = self.decoder(tgt, memory1, memory2, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
-        return hs.transpose(1, 2), memory.permute1(1, 2, 0).view(bs, c, h, w), memory2.permute(1, 2, 0).view(bs, c, h, w)
+        return hs.transpose(1, 2), memory1.permute(1, 2, 0).view(bs, c, h, w), memory2.permute(1, 2, 0).view(bs, c, h, w)
 
 
 class TransformerEncoder(nn.Module):
