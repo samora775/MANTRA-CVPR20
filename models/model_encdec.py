@@ -9,7 +9,7 @@ from typing import Optional, List
 from torch import nn, Tensor
 
 
-class model_encdec(nn.Module):
+class Transformer(nn.Module):
 
     def __init__(self, settings, d_model=512, nhead=8, num_encoder_layers=6,
                  num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
@@ -75,7 +75,7 @@ class model_encdec(nn.Module):
         mask = mask.flatten(1)
 
         tgt = torch.zeros_like(query_embed)
-        #memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
+        # memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
 
         memory1 = self.encoder_past(src, src_key_padding_mask=mask, pos=pos_embed)
         memory2 = self.encoder_fut(src, src_key_padding_mask=mask, pos=pos_embed)
@@ -84,6 +84,7 @@ class model_encdec(nn.Module):
         hs = self.decoder(tgt, memory1, memory2, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
         return hs.transpose(1, 2), memory1.permute(1, 2, 0).view(bs, c, h, w), memory2.permute(1, 2, 0).view(bs, c, h, w)
+
 
 
 class TransformerEncoder(nn.Module):
@@ -120,7 +121,7 @@ class TransformerDecoder(nn.Module):
         self.norm = norm
         self.return_intermediate = return_intermediate
 
-    def forward(self, tgt, memory,
+    def forward(self, tgt, memory1,memory2,
                 tgt_mask: Optional[Tensor] = None,
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
@@ -132,7 +133,7 @@ class TransformerDecoder(nn.Module):
         intermediate = []
 
         for layer in self.layers:
-            output = layer(output, memory, tgt_mask=tgt_mask,
+            output = layer(output, memory1,memory2, tgt_mask=tgt_mask,
                            memory_mask=memory_mask,
                            tgt_key_padding_mask=tgt_key_padding_mask,
                            memory_key_padding_mask=memory_key_padding_mask,
@@ -237,7 +238,7 @@ class TransformerDecoderLayer(nn.Module):
     def with_pos_embed(self, tensor, pos: Optional[Tensor]):
         return tensor if pos is None else tensor + pos
 
-    def forward_post(self, tgt, memory,
+    def forward_post(self, tgt, memory2,
                      tgt_mask: Optional[Tensor] = None,
                      memory_mask: Optional[Tensor] = None,
                      tgt_key_padding_mask: Optional[Tensor] = None,
@@ -250,8 +251,8 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout1(tgt2)
         tgt = self.norm1(tgt)
         tgt2 = self.multihead_attn(query=self.with_pos_embed(tgt, query_pos),
-                                   key=self.with_pos_embed(memory, pos),
-                                   value=memory, attn_mask=memory_mask,
+                                   key=self.with_pos_embed(memory2, pos),
+                                   value=memory2, attn_mask=memory_mask,
                                    key_padding_mask=memory_key_padding_mask)[0]
         tgt = tgt + self.dropout2(tgt2)
         tgt = self.norm2(tgt)
@@ -260,7 +261,7 @@ class TransformerDecoderLayer(nn.Module):
         tgt = self.norm3(tgt)
         return tgt
 
-    def forward_pre(self, tgt, memory,
+    def forward_pre(self, tgt, memory1,
                     tgt_mask: Optional[Tensor] = None,
                     memory_mask: Optional[Tensor] = None,
                     tgt_key_padding_mask: Optional[Tensor] = None,
@@ -274,8 +275,8 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout1(tgt2)
         tgt2 = self.norm2(tgt)
         tgt2 = self.multihead_attn(query=self.with_pos_embed(tgt2, query_pos),
-                                   key=self.with_pos_embed(memory, pos),
-                                   value=memory, attn_mask=memory_mask,
+                                   key=self.with_pos_embed(memory1, pos),
+                                   value=memory1, attn_mask=memory_mask,
                                    key_padding_mask=memory_key_padding_mask)[0]
         tgt = tgt + self.dropout2(tgt2)
         tgt2 = self.norm3(tgt)
@@ -283,7 +284,7 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout3(tgt2)
         return tgt
 
-    def forward(self, tgt, memory,
+    def forward(self, tgt, memory2,
                 tgt_mask: Optional[Tensor] = None,
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
@@ -291,9 +292,9 @@ class TransformerDecoderLayer(nn.Module):
                 pos: Optional[Tensor] = None,
                 query_pos: Optional[Tensor] = None):
         if self.normalize_before:
-            return self.forward_pre(tgt, memory, tgt_mask, memory_mask,
+            return self.forward_pre(tgt, memory2, tgt_mask, memory_mask,
                                     tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos)
-        return self.forward_post(tgt, memory, tgt_mask, memory_mask,
+        return self.forward_post(tgt, memory2, tgt_mask, memory_mask,
                                  tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos)
 
 
@@ -323,3 +324,14 @@ def _get_activation_fn(activation):
     if activation == "glu":
         return F.glu
     raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
+
+def get_position_encoding(self, x):
+    max_length = x.size()[1]
+    position = torch.arange(max_length, dtype=torch.float32,
+                            device=x.device)
+    scaled_time = position.unsqueeze(1) * self.inv_timescales.unsqueeze(0)
+    signal = torch.cat([torch.sin(scaled_time), torch.cos(scaled_time)],
+                       dim=1)
+    signal = F.pad(signal, (0, 0, 0, self.hidden_size % 2))
+    signal = signal.view(1, max_length, self.hidden_size)
+    return signal
