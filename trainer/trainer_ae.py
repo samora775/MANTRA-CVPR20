@@ -91,13 +91,24 @@ class Trainer:
         # load model checkpoint
         # test folder creating
 
-        path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
-        if os.path.exists(path):
-            checkpoint = torch.load(path)
-            self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
-            self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-            epoch = checkpoint['epoch']
-            self.criterionLoss = checkpoint['loss']
+#         path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
+#         if os.path.exists(path):
+#             checkpoint = torch.load(path)
+#             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
+#             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
+#             epoch = checkpoint['epoch']
+#             self.criterionLoss = checkpoint['loss']
+
+        for ep in range(0,601):
+            # print(ep)
+            path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
+            if os.path.exists(path):
+                checkpoint = torch.load(path)
+                self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
+                self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
+                self.start_epoch = checkpoint['epoch']
+                self.criterionLoss = checkpoint['loss']
+        break
             
 
         # Write details to file
@@ -203,7 +214,7 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon30s', dict_metrics_test['horizon30s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
                 
-                time.sleep(1)
+#                 time.sleep(1)
                 if qt.time_up():
                     torch.save({
                         'epoch': epoch,
