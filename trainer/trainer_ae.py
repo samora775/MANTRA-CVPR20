@@ -174,9 +174,10 @@ class Trainer:
         """
         config = self.config
         # Training loop
+        # quota _time
+        qt = quota('10m', '1m')
         for epoch in range(self.start_epoch, config.max_epochs):
-            # quota _time
-            qt = quota('10m', '1m')
+            
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
             print('Loss: {}'.format(loss))
@@ -209,25 +210,12 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon30s', dict_metrics_test['horizon30s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
 
-                # Save model checkpoint
-                # torch.save(self.mem_n2n, self.folder_test + 'model_ae_epoch_' + str(epoch) + '_' + self.name_test)
-
-                # quota _time
                 if qt.time_up():
-                    # Save model checkpoint
-                    #torch.save(self.mem_n2n, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-
-                    #save the loss
                     torch.save({
                         'epoch': epoch,
                         'model_state_dict': self.mem_n2n.state_dict(),
                         'optimizer_state_dict': self.opt.state_dict(),
                         'loss': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-
-                    # for lossV in self.mem_n2n.state_dict():
-                    #     print(lossV, "\t", self.mem_n2n.state_dict()[lossV].size())
-
-                    #exit
                     sys.exit("Exit from Session")
 
 
