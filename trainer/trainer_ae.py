@@ -175,14 +175,14 @@ class Trainer:
         config = self.config
         # Training loop
         for epoch in range(self.start_epoch, config.max_epochs):
-
+            # quota _time
+            qt = quota('10m', '1m')
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
             print('Loss: {}'.format(loss))
 
             if (epoch + 1) % 20 == 0:
-                # quota _time
-                qt = quota('20m', '3m')
+               
 
 
                 print('test on train dataset')
