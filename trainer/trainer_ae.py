@@ -80,7 +80,7 @@ class Trainer:
         # test folder creating
 
         path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
-        if os.path.exists(self.folder_test):
+        if os.path.exists(path):
             checkpoint = torch.load(path)
             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
