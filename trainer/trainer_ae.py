@@ -15,6 +15,7 @@ from torch.autograd import Variable
 import tqdm
 from tquota import quota
 import time
+import sys
 
 
 class Trainer:
@@ -23,6 +24,9 @@ class Trainer:
         The Trainer class handles the training procedure for training the autoencoder.
         :param config: configuration parameters (see train_ae.py)
         """
+
+
+
 
         # test folder creating
         self.name_test = str(datetime.datetime.now())[:13]
@@ -69,6 +73,22 @@ class Trainer:
         }
         self.max_epochs = config.max_epochs
 
+        # to check the old model if exist
+        # self.mem_n2n= torch.load(self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+        # self.start_epoch = epoch+1
+        # load model checkpoint
+        # test folder creating
+
+        path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
+        if os.path.exists(self.folder_test):
+            checkpoint = torch.load(path)
+            self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
+            self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
+            epoch = checkpoint['epoch']
+            self.criterionLoss = checkpoint['loss']
+
+
+
         # model
         self.mem_n2n = model_encdec(self.settings)
 
@@ -82,6 +102,8 @@ class Trainer:
             self.mem_n2n = self.mem_n2n.cuda()
         self.start_epoch = 0
         self.config = config
+
+
 
         # Write details to file
         self.write_details()
@@ -159,6 +181,10 @@ class Trainer:
             print('Loss: {}'.format(loss))
 
             if (epoch + 1) % 20 == 0:
+                # quota _time
+                qt = quota('20m', '3m')
+
+
                 print('test on train dataset')
                 dict_metrics_train = self.evaluate(self.train_loader, epoch + 1)
 
@@ -184,15 +210,28 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
 
                 # Save model checkpoint
-                #torch.save(self.mem_n2n, self.folder_test + 'model_ae_epoch_' + str(epoch) + '_' + self.name_test)
-                
-                # quota _time was set for 1 minute and the gap _time as 30 second
-                qt = quota('10m', '1m')
+                # torch.save(self.mem_n2n, self.folder_test + 'model_ae_epoch_' + str(epoch) + '_' + self.name_test)
+
+                # quota _time
                 if qt.time_up():
                     # Save model checkpoint
-                    torch.save(self.mem_n2n, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-                    break
-                    
+                    #torch.save(self.mem_n2n, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+
+                    #save the loss
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': self.mem_n2n.state_dict(),
+                        'optimizer_state_dict': self.opt.state_dict(),
+                        'loss': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+
+                    # for lossV in self.mem_n2n.state_dict():
+                    #     print(lossV, "\t", self.mem_n2n.state_dict()[lossV].size())
+
+                    #exit
+                    sys.exit("Exit from Session")
+
+
+
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
