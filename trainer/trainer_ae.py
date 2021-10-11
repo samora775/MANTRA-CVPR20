@@ -171,19 +171,16 @@ class Trainer:
         """
         config = self.config
         # Training loop
-        
+        # quota _time
+        qt = quota('10m', '1m')
         for epoch in range(self.start_epoch, config.max_epochs):
-            # quota _time
-            qt = quota('10m', '1m')
             
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
             print('Loss: {}'.format(loss))
 
             if (epoch + 1) % 20 == 0:
-               
-
-
+              
                 print('test on train dataset')
                 dict_metrics_train = self.evaluate(self.train_loader, epoch + 1)
 
@@ -215,6 +212,7 @@ class Trainer:
                         'model_state_dict': self.mem_n2n.state_dict(),
                         'optimizer_state_dict': self.opt.state_dict(),
                         'loss': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+                    print("outtttttttttt")
                     sys.exit("Exit from Session")
 
 
