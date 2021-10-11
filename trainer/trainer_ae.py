@@ -70,22 +70,6 @@ class Trainer:
         }
         self.max_epochs = config.max_epochs
 
-        # to check the old model if exist
-        # self.mem_n2n= torch.load(self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-        # self.start_epoch = epoch+1
-        # load model checkpoint
-        # test folder creating
-
-        path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
-        if os.path.exists(path):
-            checkpoint = torch.load(path)
-            self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
-            self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-            epoch = checkpoint['epoch']
-            self.criterionLoss = checkpoint['loss']
-
-
-
         # model
         self.mem_n2n = model_encdec(self.settings)
 
@@ -100,7 +84,21 @@ class Trainer:
         self.start_epoch = 0
         self.config = config
 
+        
+        # to check the old model if exist
+        # self.mem_n2n= torch.load(self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+        # self.start_epoch = epoch+1
+        # load model checkpoint
+        # test folder creating
 
+        path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
+        if os.path.exists(path):
+            checkpoint = torch.load(path)
+            self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
+            self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
+            epoch = checkpoint['epoch']
+            self.criterionLoss = checkpoint['loss']
+            
 
         # Write details to file
         self.write_details()
