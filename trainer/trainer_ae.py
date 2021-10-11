@@ -108,7 +108,7 @@ class Trainer:
                 self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
                 self.start_epoch = checkpoint['epoch']
                 self.criterionLoss = checkpoint['loss']
-        break
+            break
             
 
         # Write details to file
