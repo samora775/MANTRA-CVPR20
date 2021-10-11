@@ -209,7 +209,8 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon20s', dict_metrics_test['horizon20s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon30s', dict_metrics_test['horizon30s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
-
+                
+                time.sleep(1)
                 if qt.time_up():
                     torch.save({
                         'epoch': epoch,
