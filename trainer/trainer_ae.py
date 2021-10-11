@@ -24,10 +24,7 @@ class Trainer:
         The Trainer class handles the training procedure for training the autoencoder.
         :param config: configuration parameters (see train_ae.py)
         """
-
-
-
-
+        
         # test folder creating
         self.name_test = str(datetime.datetime.now())[:13]
         self.folder_tensorboard = 'runs/runs-ae/'
@@ -174,9 +171,10 @@ class Trainer:
         """
         config = self.config
         # Training loop
-        # quota _time
-        qt = quota('10m', '1m')
+        
         for epoch in range(self.start_epoch, config.max_epochs):
+            # quota _time
+            qt = quota('10m', '1m')
             
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
