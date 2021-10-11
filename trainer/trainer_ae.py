@@ -13,6 +13,8 @@ from models.model_encdec import model_encdec
 import dataset_invariance
 from torch.autograd import Variable
 import tqdm
+from tquota import quota
+import time
 
 
 class Trainer:
@@ -185,7 +187,7 @@ class Trainer:
                 #torch.save(self.mem_n2n, self.folder_test + 'model_ae_epoch_' + str(epoch) + '_' + self.name_test)
                 
                 # quota _time was set for 1 minute and the gap _time as 30 second
-                qt = quota('20m', '2m')
+                qt = quota('10m', '1m')
                 if qt.time_up():
                     # Save model checkpoint
                     torch.save(self.mem_n2n, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
