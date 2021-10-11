@@ -106,9 +106,9 @@ class Trainer:
                 checkpoint = torch.load(path)
                 self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
                 self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-                self.start_epoch = checkpoint['epoch']
+                self.start_epoch = checkpoint['epoch'] + 1
                 self.criterionLoss = checkpoint['loss']
-            break
+            
             
 
         # Write details to file
