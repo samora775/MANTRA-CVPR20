@@ -182,8 +182,15 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
 
                 # Save model checkpoint
-                torch.save(self.mem_n2n, self.folder_test + 'model_ae_epoch_' + str(epoch) + '_' + self.name_test)
-
+                #torch.save(self.mem_n2n, self.folder_test + 'model_ae_epoch_' + str(epoch) + '_' + self.name_test)
+                
+                # quota _time was set for 1 minute and the gap _time as 30 second
+                qt = quota('20m', '2m')
+                if qt.time_up():
+                    # Save model checkpoint
+                    torch.save(self.mem_n2n, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+                    break
+                    
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
