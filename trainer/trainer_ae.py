@@ -210,7 +210,8 @@ class Trainer:
                         'model_state_dict': self.mem_n2n.state_dict(),
                         'optimizer_state_dict': self.opt.state_dict(),
                         'loss': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-                    print("outtttttttttt")
+                    print(epoch)
+                    print(self.criterionLoss)
                     sys.exit("Exit from Session")
 
 
