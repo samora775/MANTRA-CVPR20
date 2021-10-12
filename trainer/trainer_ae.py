@@ -169,7 +169,7 @@ class Trainer:
         config = self.config
         # Training loop
         # quota _time
-        qt = quota('5m', '30m')
+        qt = quota('5m', '30s')
         for epoch in range(self.start_epoch, config.max_epochs):
             
             print(' ----- Epoch: {}'.format(epoch))
