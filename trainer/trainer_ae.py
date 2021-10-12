@@ -85,18 +85,20 @@ class Trainer:
         self.config = config
 
         s2 = []
-        for ep in range(0, 601):
-            path = 'C:\\Users\\ASUS-PC\\Downloads\\model_controller_epoch_' + str(ep) + '_2021-10-12 00'
-            while os.path.exists(path):
-                s2.append(ep)
-                break
-        h = max(s2)
-        path ='C:\\Users\\ASUS-PC\\Downloads\\model_controller_epoch_' + str(h) + '_2021-10-12 00'
-        checkpoint = torch.load(path)
-        self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
-        self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.start_epoch = h + 1
-        self.criterionLoss = checkpoint['loss']
+        path0 = self.folder_test
+        if os.path.exists(path0):
+            for ep in range(0, 601):
+                path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
+                while os.path.exists(path):
+                    s2.append(ep)
+                    break
+            h = max(s2)
+            path =self.folder_test + 'model_controller_epoch_' + str(h) + '_' + self.name_test
+            checkpoint = torch.load(path)
+            self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
+            self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.start_epoch = h + 1
+            self.criterionLoss = checkpoint['loss']
             
 
         # Write details to file
