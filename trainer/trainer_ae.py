@@ -172,14 +172,26 @@ class Trainer:
         # Training loop
  
         #quota _time
-        qt = quota('5m', '30s')
+        qt = quota('2m', '10s')
         for epoch in range(self.start_epoch, config.max_epochs):
             # quota _time
             # qt = quota('5m', '30s')
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
             print('Loss: {}'.format(loss))
-
+            
+            time.sleep(1)
+            if qt.time_up():
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': self.mem_n2n.state_dict(),
+                    'optimizer_state_dict': self.opt.state_dict(),
+                    'c': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+                print(epoch)
+                print(self.criterionLoss)
+                print(loss)
+                sys.exit("Exit from Session")
+                
             if (epoch + 1) % 20 == 0:
                 print('test on train dataset')
                 dict_metrics_train = self.evaluate(self.train_loader, epoch + 1)
@@ -210,17 +222,7 @@ class Trainer:
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
             
-            time.sleep(1)
-            if qt.time_up():
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': self.mem_n2n.state_dict(),
-                    'optimizer_state_dict': self.opt.state_dict(),
-                    'c': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-                print(epoch)
-                print(self.criterionLoss)
-                print(loss)
-                sys.exit("Exit from Session")
+
                 
         # Save final trained model
         torch.save(self.mem_n2n, self.folder_test + 'model_ae_' + self.name_test)
