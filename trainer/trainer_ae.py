@@ -84,31 +84,19 @@ class Trainer:
         self.start_epoch = 0
         self.config = config
 
-        
-        # to check the old model if exist
-        # self.mem_n2n= torch.load(self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-        # self.start_epoch = epoch+1
-        # load model checkpoint
-        # test folder creating
-
-#         path = self.folder_test + 'model_controller_epoch_' + str() + '_' + self.name_test
-#         if os.path.exists(path):
-#             checkpoint = torch.load(path)
-#             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
-#             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-#             epoch = checkpoint['epoch']
-#             self.criterionLoss = checkpoint['loss']
-
-        for ep in range(0,601):
-            # print(ep)
-            path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
-            if os.path.exists(path):
-                checkpoint = torch.load(path)
-                self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
-                self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-                self.start_epoch = ep + 1
-                self.criterionLoss = checkpoint['loss']
-            
+        s2 = []
+        for ep in range(0, 601):
+            path = 'C:\\Users\\ASUS-PC\\Downloads\\model_controller_epoch_' + str(ep) + '_2021-10-12 00'
+            while os.path.exists(path):
+                s2.append(ep)
+                break
+        h = max(s2)
+        path ='C:\\Users\\ASUS-PC\\Downloads\\model_controller_epoch_' + str(h) + '_2021-10-12 00'
+        checkpoint = torch.load(path)
+        self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
+        self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.start_epoch = h + 1
+        self.criterionLoss = checkpoint['loss']
             
 
         # Write details to file
