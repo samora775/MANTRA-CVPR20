@@ -85,19 +85,16 @@ class Trainer:
         self.config = config
 
         s2 = []
-        path0 = self.folder_test
-        if os.path.exists(path0):
-            for ep in range(0, 601):
-                path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
-                while os.path.exists(path):
-                    s2.append(ep)
-                    break
-            h = max(s2)
-            path =self.folder_test + 'model_controller_epoch_' + str(h) + '_' + self.name_test
+        for ep in range(0, 601):
+            path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
+            if os.path.exists(path):
+                s2.insert(len(s2) - 1, ep)
+        if s2:
+            path =self.folder_test + 'model_controller_epoch_' + str(max(s2)) + '_' + self.name_test
             checkpoint = torch.load(path)
             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
-            self.start_epoch = h + 1
+            self.start_epoch = max(s2) + 1
             self.criterionLoss = checkpoint['loss']
             
 
