@@ -83,7 +83,7 @@ class Trainer:
             self.mem_n2n = self.mem_n2n.cuda()
         self.start_epoch = 0
         self.config = config
-
+####################################################################################################
         s2 = []
         for ep in range(0, 601):
             path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
@@ -96,9 +96,10 @@ class Trainer:
             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
             self.start_epoch = max(s2) + 1
-            self.criterionLoss = checkpoint['loss']
+            self.criterionLoss.load_state_dict = checkpoint['loss']
             print(self.start_epoch)
             print(self.criterionLoss)
+####################################################################################################
             
 
         # Write details to file
@@ -218,7 +219,7 @@ class Trainer:
                     'epoch': epoch,
                     'model_state_dict': self.mem_n2n.state_dict(),
                     'optimizer_state_dict': self.opt.state_dict(),
-                    'loss': loss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+                    'loss': self.criterionLoss.state_dict()}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
                 print(epoch)
                 print(loss)
                 sys.exit("Exit from Session")
