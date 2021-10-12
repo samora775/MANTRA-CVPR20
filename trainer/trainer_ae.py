@@ -69,20 +69,6 @@ class Trainer:
             "future_len": config.future_len,
         }
         self.max_epochs = config.max_epochs
-
-        # model
-        self.mem_n2n = model_encdec(self.settings)
-
-        # loss
-        self.criterionLoss = nn.MSELoss()
-
-        self.opt = torch.optim.Adam(self.mem_n2n.parameters(), lr=config.learning_rate)
-        self.iterations = 0
-        if config.cuda:
-            self.criterionLoss = self.criterionLoss.cuda()
-            self.mem_n2n = self.mem_n2n.cuda()
-        self.start_epoch = 0
-        self.config = config
 ####################################################################################################
         s2 = []
         for ep in range(0, 601):
@@ -100,6 +86,20 @@ class Trainer:
             print(self.start_epoch)
             print(self.criterionLoss)
 ####################################################################################################
+        # model
+        self.mem_n2n = model_encdec(self.settings)
+
+        # loss
+        self.criterionLoss = nn.MSELoss()
+
+        self.opt = torch.optim.Adam(self.mem_n2n.parameters(), lr=config.learning_rate)
+        self.iterations = 0
+        if config.cuda:
+            self.criterionLoss = self.criterionLoss.cuda()
+            self.mem_n2n = self.mem_n2n.cuda()
+        self.start_epoch = 0
+        self.config = config
+
             
 
         # Write details to file
@@ -212,7 +212,7 @@ class Trainer:
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
-                    
+#############################################################################################################
             time.sleep(1)
             if qt.time_up():
                 torch.save({
@@ -223,7 +223,7 @@ class Trainer:
                 print(epoch)
                 print(loss)
                 sys.exit("Exit from Session")
-
+#############################################################################################################
                 
         # Save final trained model
         torch.save(self.mem_n2n, self.folder_test + 'model_ae_' + self.name_test)
