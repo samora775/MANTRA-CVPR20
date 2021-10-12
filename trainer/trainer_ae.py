@@ -168,9 +168,9 @@ class Trainer:
         """
         config = self.config
         # Training loop
-        
-        quota _time
-        qt = quota('5m', '30s'
+ 
+        #quota _time
+        qt = quota('5m', '30s')
         for epoch in range(self.start_epoch, config.max_epochs):
             # quota _time
             # qt = quota('5m', '30s')
@@ -179,9 +179,6 @@ class Trainer:
             print('Loss: {}'.format(loss))
 
             if (epoch + 1) % 20 == 0:
-#                 # quota _time
-#                 qt = quota('5m', '30s')
-                
                 print('test on train dataset')
                 dict_metrics_train = self.evaluate(self.train_loader, epoch + 1)
 
