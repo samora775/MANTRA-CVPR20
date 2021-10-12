@@ -69,7 +69,22 @@ class Trainer:
             "future_len": config.future_len,
         }
         self.max_epochs = config.max_epochs
-####################################################################################################
+
+        # model
+        self.mem_n2n = model_encdec(self.settings)
+
+        # loss
+        self.criterionLoss = nn.MSELoss()
+
+        self.opt = torch.optim.Adam(self.mem_n2n.parameters(), lr=config.learning_rate)
+        self.iterations = 0
+        if config.cuda:
+            self.criterionLoss = self.criterionLoss.cuda()
+            self.mem_n2n = self.mem_n2n.cuda()
+        self.start_epoch = 0
+        self.config = config
+
+   ####################################################################################################
         s2 = []
         for ep in range(0, 601):
             path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
@@ -85,22 +100,7 @@ class Trainer:
             self.criterionLoss.load_state_dict = checkpoint['loss']
             print(self.start_epoch)
             print(self.criterionLoss)
-####################################################################################################
-        # model
-        self.mem_n2n = model_encdec(self.settings)
-
-        # loss
-        self.criterionLoss = nn.MSELoss()
-
-        self.opt = torch.optim.Adam(self.mem_n2n.parameters(), lr=config.learning_rate)
-        self.iterations = 0
-        if config.cuda:
-            self.criterionLoss = self.criterionLoss.cuda()
-            self.mem_n2n = self.mem_n2n.cuda()
-        self.start_epoch = 0
-        self.config = config
-
-            
+####################################################################################################         
 
         # Write details to file
         self.write_details()
