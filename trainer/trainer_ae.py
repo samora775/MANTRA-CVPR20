@@ -180,17 +180,7 @@ class Trainer:
             loss = self._train_single_epoch()
             print('Loss: {}'.format(loss))
             
-            time.sleep(1)
-            if qt.time_up():
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': self.mem_n2n.state_dict(),
-                    'optimizer_state_dict': self.opt.state_dict(),
-                    'c': self.criterionLoss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
-                print(epoch)
-                print(self.criterionLoss)
-                print(loss)
-                sys.exit("Exit from Session")
+            
                 
             if (epoch + 1) % 20 == 0:
                 print('test on train dataset')
@@ -221,7 +211,17 @@ class Trainer:
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
-            
+                    
+            time.sleep(1)
+            if qt.time_up():
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': self.mem_n2n.state_dict(),
+                    'optimizer_state_dict': self.opt.state_dict(),
+                    'loss': loss}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+                print(epoch)
+                print(loss)
+                sys.exit("Exit from Session")
 
                 
         # Save final trained model
