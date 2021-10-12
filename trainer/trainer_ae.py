@@ -89,6 +89,7 @@ class Trainer:
             path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
             if os.path.exists(path):
                 s2.insert(len(s2) - 1, ep)
+                break
         if s2:
             path =self.folder_test + 'model_controller_epoch_' + str(max(s2)) + '_' + self.name_test
             checkpoint = torch.load(path)
@@ -168,7 +169,7 @@ class Trainer:
         config = self.config
         # Training loop
         # quota _time
-        qt = quota('10m', '1m')
+        qt = quota('5m', '30m')
         for epoch in range(self.start_epoch, config.max_epochs):
             
             print(' ----- Epoch: {}'.format(epoch))
@@ -201,7 +202,7 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon30s', dict_metrics_test['horizon30s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
                 
-#                 time.sleep(1)
+                time.sleep(1)
                 if qt.time_up():
                     torch.save({
                         'epoch': epoch,
