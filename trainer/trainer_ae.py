@@ -97,7 +97,7 @@ class Trainer:
             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
             self.start_epoch = max(s2) + 1
             self.criterionLoss = checkpoint['loss']
-            print(start_epoch)
+            print(self.start_epoch)
             print(self.criterionLoss)
             
 
