@@ -99,7 +99,7 @@ class Trainer:
             self.start_epoch = max(s2) + 1
             self.criterionLoss.load_state_dict(checkpoint['loss'])
             print(self.start_epoch)
-            print(self.criterionLoss)
+            print(self.criterionLoss.load_state_dict(checkpoint['loss']))
 ####################################################################################################         
 
         # Write details to file
