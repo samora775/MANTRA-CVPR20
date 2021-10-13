@@ -204,12 +204,7 @@ class Trainer:
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
-            #############################################################################################################
-                # Tensorboard summary: loss each epoch
-                self.writer.add_scalar('training loss', lsp / 20, epoch)
-                lsp = 0.0
-            #############################################################################################################
-
+#############################################################################################################
             time.sleep(10)
             if qt.time_up():
                 torch.save({
