@@ -24,7 +24,7 @@ class Trainer:
         The Trainer class handles the training procedure for training the autoencoder.
         :param config: configuration parameters (see train_ae.py)
         """
-        
+
         # test folder creating
         self.name_test = str(datetime.datetime.now())[:13]
         self.folder_tensorboard = 'runs/runs-ae/'
@@ -84,7 +84,7 @@ class Trainer:
         self.start_epoch = 0
         self.config = config
 
-#####################################################################################################
+        #####################################################################################################
         s2 = []
         for ep in range(0, 601):
             path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
@@ -92,16 +92,11 @@ class Trainer:
                 s2.insert(len(s2) - 1, ep)
                 break
         if s2:
-            path =self.folder_test + 'model_controller_epoch_' + str(max(s2)) + '_' + self.name_test
+            path = self.folder_test + 'model_controller_epoch_' + str(max(s2)) + '_' + self.name_test
             checkpoint = torch.load(path)
             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
-            self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
             self.start_epoch = max(s2) + 1
-            self.criterionLoss.load_state_dict(checkpoint['loss'])
-            n=self.criterionLoss.load_state_dict(checkpoint['loss'])
-            print(self.start_epoch)
-            print(n)
-####################################################################################################         
+        ####################################################################################################
 
         # Write details to file
         self.write_details()
@@ -172,20 +167,15 @@ class Trainer:
         """
         config = self.config
         # Training loop
-####################################################################################################         
-        #quota _time
-        qt = quota('2m', '10s')
-####################################################################################################         
-        lsp=[]
+        ####################################################################################################
+        # quota _time
+        qt = quota('18m', '1m')
+        ####################################################################################################
         for epoch in range(self.start_epoch, config.max_epochs):
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
-####################################################################################################             
-         
-            lsp.append(loss)
-####################################################################################################             
             print('Loss: {}'.format(loss))
-    
+
             if (epoch + 1) % 20 == 0:
                 print('test on train dataset')
                 dict_metrics_train = self.evaluate(self.train_loader, epoch + 1)
@@ -214,29 +204,26 @@ class Trainer:
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
-#############################################################################################################
-                #plt.plot(np.array(lsp), 'r')
-#############################################################################################################
+            #############################################################################################################
+                # Tensorboard summary: loss each epoch
+                self.writer.add_scalar('training loss', lsp / 20, epoch)
+                lsp = 0.0
+            #############################################################################################################
 
-
-#############################################################################################################
-            time.sleep(1)
+            time.sleep(10)
             if qt.time_up():
                 torch.save({
                     'epoch': epoch,
-                    'model_state_dict': self.mem_n2n.state_dict(),
-                    'optimizer_state_dict': self.opt.state_dict(),
-                    'loss': self.criterionLoss.state_dict()}, self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
+                    'model_state_dict': self.mem_n2n.state_dict(),},
+                    self.folder_test + 'model_controller_epoch_' + str(epoch) + '_' + self.name_test)
                 print(epoch)
                 print(loss)
                 sys.exit("Exit from Session")
-#############################################################################################################
-                
+        #############################################################################################################
+
         # Save final trained model
         torch.save(self.mem_n2n, self.folder_test + 'model_ae_' + self.name_test)
-####################################################################################################             
-        # print loss array
-####################################################################################################      
+
     def evaluate(self, loader, epoch=0):
         """
         Evaluate the model.
