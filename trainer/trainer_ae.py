@@ -90,7 +90,6 @@ class Trainer:
             path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
             if os.path.exists(path):
                 s2.insert(len(s2) - 1, ep)
-                break
         if s2:
             path = self.folder_test + 'model_controller_epoch_' + str(max(s2)) + '_' + self.name_test
             checkpoint = torch.load(path)
