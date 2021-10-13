@@ -84,7 +84,7 @@ class Trainer:
         self.start_epoch = 0
         self.config = config
 
-   ####################################################################################################
+#####################################################################################################
         s2 = []
         for ep in range(0, 601):
             path = self.folder_test + 'model_controller_epoch_' + str(ep) + '_' + self.name_test
@@ -97,7 +97,7 @@ class Trainer:
             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
             self.start_epoch = max(s2) + 1
-            self.criterionLoss.load_state_dict = checkpoint['loss']
+            self.criterionLoss.load_state_dict(checkpoint['loss'])
             print(self.start_epoch)
             print(self.criterionLoss)
 ####################################################################################################         
