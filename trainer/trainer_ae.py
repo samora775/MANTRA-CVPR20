@@ -176,13 +176,13 @@ class Trainer:
         #quota _time
         qt = quota('2m', '10s')
 ####################################################################################################         
-
+        lsp=[]
         for epoch in range(self.start_epoch, config.max_epochs):
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
 ####################################################################################################             
-            lsp=[]
-            lsp.insert(len(lsp) - 1, loss)
+         
+            lsp.append(loss)
 ####################################################################################################             
             print('Loss: {}'.format(loss))
     
@@ -210,11 +210,15 @@ class Trainer:
                 self.writer.add_scalar('accuracy_test/Horizon20s', dict_metrics_test['horizon20s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon30s', dict_metrics_test['horizon30s'], epoch)
                 self.writer.add_scalar('accuracy_test/Horizon40s', dict_metrics_test['horizon40s'], epoch)
-                
-           
+
                 # Tensorboard summary: model weights
                 for name, param in self.mem_n2n.named_parameters():
                     self.writer.add_histogram(name, param.data, epoch)
+#############################################################################################################
+                #plt.plot(np.array(lsp), 'r')
+#############################################################################################################
+
+
 #############################################################################################################
             time.sleep(1)
             if qt.time_up():
