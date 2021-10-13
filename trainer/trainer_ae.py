@@ -98,8 +98,9 @@ class Trainer:
             self.opt.load_state_dict(checkpoint['optimizer_state_dict'])
             self.start_epoch = max(s2) + 1
             self.criterionLoss.load_state_dict(checkpoint['loss'])
+            n=self.criterionLoss.load_state_dict(checkpoint['loss'])
             print(self.start_epoch)
-            print(self.criterionLoss.load_state_dict(checkpoint['loss']))
+            print(n)
 ####################################################################################################         
 
         # Write details to file
@@ -173,18 +174,18 @@ class Trainer:
         # Training loop
 ####################################################################################################         
         #quota _time
-        qt = quota('6m', '10s')
+        qt = quota('2m', '10s')
 ####################################################################################################         
 
         for epoch in range(self.start_epoch, config.max_epochs):
-            # quota _time
-            # qt = quota('5m', '30s')
             print(' ----- Epoch: {}'.format(epoch))
             loss = self._train_single_epoch()
+####################################################################################################             
+            lsp=[]
+            lsp.insert(len(lsp) - 1, loss)
+####################################################################################################             
             print('Loss: {}'.format(loss))
-            
-            
-                
+    
             if (epoch + 1) % 20 == 0:
                 print('test on train dataset')
                 dict_metrics_train = self.evaluate(self.train_loader, epoch + 1)
@@ -229,7 +230,9 @@ class Trainer:
                 
         # Save final trained model
         torch.save(self.mem_n2n, self.folder_test + 'model_ae_' + self.name_test)
-
+####################################################################################################             
+        # print loss array
+####################################################################################################      
     def evaluate(self, loader, epoch=0):
         """
         Evaluate the model.
