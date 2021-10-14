@@ -95,8 +95,8 @@ class Trainer:
             checkpoint = torch.load(path)
             self.mem_n2n.load_state_dict(checkpoint['model_state_dict'])
             self.start_epoch = max(s2) + 1
-            print("Epoch are:"+ s2)
-            print("Max epoch is:"+ str(max(s2)))
+            print(s2)
+            print(str(max(s2)))
         ####################################################################################################
 
         # Write details to file
