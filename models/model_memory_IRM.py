@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import matplotlib.pyplot as plt
 import random
 
 class model_memory_IRM(nn.Module):
@@ -20,6 +19,8 @@ class model_memory_IRM(nn.Module):
         self.num_prediction = settings["num_prediction"]
         self.past_len = settings["past_len"]
         self.future_len = settings["future_len"]
+        self.att_size = settings['att_size']
+
 
         # similarity criterion
         self.weight_read = []
@@ -38,9 +39,16 @@ class model_memory_IRM(nn.Module):
         self.encoder_past = model_pretrained.encoder_past
         self.encoder_fut = model_pretrained.encoder_fut
         self.decoder = model_pretrained.decoder
+        
+        self.attn1 = model_pretrained.attn1
+        self.attn2 = model_pretrained.attn2
+        
         self.FC_output = model_pretrained.FC_output
-        self.relu = nn.ReLU()
-        self.softmax = nn.Softmax()
+        # self.relu = nn.ReLU()
+        # self.softmax = nn.Softmax()
+        self.leaky_relu = nn.LeakyReLU(0.1)
+        self.softmax_att = nn.Softmax(dim=0)
+        self.tanh = nn.Tanh()
 
         self.maxpool2d = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
@@ -55,7 +63,7 @@ class model_memory_IRM(nn.Module):
             nn.ReLU(), nn.BatchNorm2d(16))
 
         self.RNN_scene = nn.GRU(16, self.dim_embedding_key, 1, batch_first=True)
-
+        
         # refinement fc layer
         self.fc_refine = nn.Linear(self.dim_embedding_key, self.future_len * 2)
 
@@ -91,19 +99,18 @@ class model_memory_IRM(nn.Module):
         j = random.randint(0, len(data_train)-1)
         past = data_train[j][1].unsqueeze(0)
         future = data_train[j][2].unsqueeze(0)
-
         past = past.cuda()
         future = future.cuda()
 
         # past encoding
         past = torch.transpose(past, 1, 2)
-        story_embed = self.relu(self.conv_past(past))
+        story_embed = self.leaky_relu(self.conv_past(past))
         story_embed = torch.transpose(story_embed, 1, 2)
         output_past, state_past = self.encoder_past(story_embed)
 
         # future encoding
         future = torch.transpose(future, 1, 2)
-        future_embed = self.relu(self.conv_fut(future))
+        future_embed = self.leaky_relu(self.conv_fut(future))
         future_embed = torch.transpose(future_embed, 1, 2)
         output_fut, state_fut = self.encoder_fut(future_embed)
 
@@ -131,7 +138,7 @@ class model_memory_IRM(nn.Module):
 
         # past temporal encoding
         past = torch.transpose(past, 1, 2)
-        story_embed = self.relu(self.conv_past(past))
+        story_embed = self.leaky_relu(self.conv_past(past))
         story_embed = torch.transpose(story_embed, 1, 2)
         output_past, state_past = self.encoder_past(story_embed)
 
@@ -150,7 +157,12 @@ class model_memory_IRM(nn.Module):
         input_dec = info_total
         state_dec = zero_padding
         for i in range(self.future_len):
-            output_decoder, state_dec = self.decoder(input_dec, state_dec)
+            
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
+            output_decoder, state_dec = self.decoder(att_wts, state_dec)
+            # output_decoder, state_dec = self.decoder(input_dec, state_dec)
+            
+            
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
@@ -201,7 +213,7 @@ class model_memory_IRM(nn.Module):
 
         # past temporal encoding
         past = torch.transpose(past, 1, 2)
-        story_embed = self.relu(self.conv_past(past))
+        story_embed = self.leaky_relu(self.conv_past(past))
         story_embed = torch.transpose(story_embed, 1, 2)
         output_past, state_past = self.encoder_past(story_embed)
 
@@ -219,7 +231,11 @@ class model_memory_IRM(nn.Module):
         input_dec = info_total
         state_dec = zero_padding
         for i in range(self.future_len):
-            output_decoder, state_dec = self.decoder(input_dec, state_dec)
+            
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
+            output_decoder, state_dec = self.decoder(att_wts, state_dec)
+            
+            # output_decoder, state_dec = self.decoder(input_dec, state_dec)
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
@@ -263,7 +279,7 @@ class model_memory_IRM(nn.Module):
 
         # future encoding
         future = torch.transpose(future, 1, 2)
-        future_embed = self.relu(self.conv_fut(future))
+        future_embed = self.leaky_relu(self.conv_fut(future))
         future_embed = torch.transpose(future_embed, 1, 2)
         output_fut, state_fut = self.encoder_fut(future_embed)
 
@@ -280,3 +296,11 @@ class model_memory_IRM(nn.Module):
         # future = torch.transpose(future, 1, 2)
         # future_track_to_write = future[index_writing]
         # self.memory_count = torch.cat((self.memory_count, future_track_to_write), 0)
+
+
+
+
+
+
+
+
