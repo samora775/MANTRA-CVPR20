@@ -110,8 +110,7 @@ class model_encdec(nn.Module):
         state_fut = zero_padding
         for i in range(self.future_len):
             
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat(input_fut, dim=2)  ))))
-            # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat((state_conc.repeat(state_fut.shape[0], 1, 1),state_fut), dim=2)))))
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_fut, dim=2))))
             output_decoder, state_fut = self.decoder(att_wts, state_fut)
             # output_decoder, state_fut = self.decoder(input_fut, state_fut)
 
