@@ -10,7 +10,7 @@ def parse_config():
     parser.add_argument("--future_len", type=int, default=40)
     parser.add_argument("--att_size", type=int, default=32)
 
-    parser.add_argument("--preds", type=int, default=600)
+    parser.add_argument("--preds", type=int, default=60)
 
     parser.add_argument("--model", default='pretrained_models/MANTRA/model_MANTRA')
     parser.add_argument("--visualize_dataset", default=False)
