@@ -106,11 +106,11 @@ class model_encdec(nn.Module):
         # state concatenation and decoding
         state_conc = torch.cat((state_past, state_fut), 2)
         input_fut = state_conc
-        state_fut = zero_padding
+#         state_fut = zero_padding
         for i in range(self.future_len):
             
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat((state_conc.repeat(state_fut.shape[0], 1, 1), state_fut, 1), dim=2)  ))))
-            output_decoder = self.decoder(att_wts)
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat((state_conc, state_fut, 1), dim=2)  ))))
+            output_decoder = self.decoder(att_wts,zero_padding)
             # output_decoder, state_fut = self.decoder(input_fut, state_fut)
 
             displacement_next = self.FC_output(output_decoder)
