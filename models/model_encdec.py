@@ -34,12 +34,11 @@ class model_encdec(nn.Module):
         self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
         
         
-        self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 2, batch_first=False,bidirectional=True)
-        
         self.attn1 = nn.Linear(2*self.dim_embedding_key + self.dim_embedding_key, self.att_size)
         self.attn2 = nn.Linear(self.att_size, 1)
 
-        
+        self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 2, batch_first=False, bidirectional=True)
+
         self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2, 2)
         
     
@@ -110,7 +109,7 @@ class model_encdec(nn.Module):
         state_fut = zero_padding
         for i in range(self.future_len):
             
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat((state_past, state_fut), 2)))))
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat((state_conc, state_fut), dim=2)  ))))
             output_decoder, state_fut = self.decoder(att_wts, state_fut)
             # output_decoder, state_fut = self.decoder(input_fut, state_fut)
 
