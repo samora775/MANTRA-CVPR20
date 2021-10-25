@@ -109,8 +109,8 @@ class model_encdec(nn.Module):
 #         state_fut = zero_padding
         for i in range(self.future_len):
             
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat((state_conc, state_fut, 1), dim=2)  ))))
-            output_decoder = self.decoder(att_wts,zero_padding)
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat((input_fut, state_fut), dim=2)  ))))
+            output_decoder = self.decoder(att_wts, zero_padding)
             # output_decoder, state_fut = self.decoder(input_fut, state_fut)
 
             displacement_next = self.FC_output(output_decoder)
