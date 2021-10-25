@@ -36,7 +36,7 @@ class model_encdec(nn.Module):
         
         self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 2, batch_first=False,bidirectional=True)
         
-        self.attn1 = nn.Linear(self.dim_embedding_key * 2 + self.dim_embedding_key * 2, self.att_size)
+        self.attn1 = nn.Linear(2*self.dim_embedding_key + self.dim_embedding_key, self.att_size)
         self.attn2 = nn.Linear(self.att_size, 1)
 
         
