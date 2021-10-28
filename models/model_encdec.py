@@ -29,18 +29,53 @@ class model_encdec(nn.Module):
         self.conv_past = nn.Conv1d(channel_in, channel_out, dim_kernel, stride=1, padding=1)
         self.conv_fut = nn.Conv1d(channel_in, channel_out, dim_kernel, stride=1, padding=1)
 
+        
         # encoder-decoder
-        self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
+        
+        # encoder
+        self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key,1, batch_first=True)
         self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
         
         
-        self.attn1 = nn.Linear(2*self.dim_embedding_key + self.dim_embedding_key, self.att_size)
+        # # Attention
+        
+        # # self.attention = Attention(2* self.dim_embedding_key, 2* self.dim_embedding_key, att_size)  # attention network
+        # self.attn_en = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
+        # self.attn_de = nn.Linear(2* self.dim_embedding_key + self.dim_embedding_key, self.att_size)
+        # self.attn_size = nn.Linear(self.att_size, 1)
+        
+        # decoder
+        self.decoder = nn.GRUCell(self.dim_embedding_key , self.dim_embedding_key )
+        
+        self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
         self.attn2 = nn.Linear(self.att_size, 1)
+        # self.op_traj = nn.Linear(self.dim_embedding_key, 2)
 
-        self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 2, batch_first=False, bidirectional=True)
-
+        
+        # self.init_h = nn.Linear(self.dim_embedding_key * 2, self.dim_embedding_key * 2)
+        # self.fcs = nn.Linear(self.dim_embedding_key * 2, self.dim_embedding_key * 2)
+        # self.sigmoid = nn.Sigmoid()
+ 
+    
+ 
+    # # encoder-decoder
+    #     self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
+    #     self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
+    #     self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 1, batch_first=False)
+    #     self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2, 2)
+         
+        # # Decoder:
+        # self.dec_gru = nn.GRUCell(2*self.waypt_enc_size, self.traj_enc_size)
+        # self.attn1 = nn.Linear(2*self.waypt_enc_size + self.traj_enc_size, self.att_size)
+        # self.attn2 = nn.Linear(self.att_size, 1)
+        # self.op_traj = nn.Linear(self.traj_enc_size, 2)
+        
         self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2, 2)
         
+        
+
+        
+
     
 
 
@@ -51,6 +86,12 @@ class model_encdec(nn.Module):
 
         # weight initialization: kaiming
         self.reset_parameters()
+        
+        
+    # def init_hidden_state(self, decoder):
+    #     h = self.init_h(decoder.mean(dim=1))  # (batch_size, decoder_dim)
+    #     return h
+        
 
     def reset_parameters(self):
         nn.init.kaiming_normal_(self.conv_past.weight)
@@ -59,8 +100,10 @@ class model_encdec(nn.Module):
         nn.init.kaiming_normal_(self.encoder_past.weight_hh_l0)
         nn.init.kaiming_normal_(self.encoder_fut.weight_ih_l0)
         nn.init.kaiming_normal_(self.encoder_fut.weight_hh_l0)
-        nn.init.kaiming_normal_(self.decoder.weight_ih_l0)
-        nn.init.kaiming_normal_(self.decoder.weight_hh_l0)
+        # nn.init.kaiming_normal_(self.decoder.weight_ih_l0)
+        # nn.init.kaiming_normal_(self.decoder.weight_hh_l0)
+        nn.init.kaiming_normal_(self.attn1.bias)
+        nn.init.kaiming_normal_(self.attn2.bias)
         nn.init.kaiming_normal_(self.FC_output.weight)
 
         nn.init.zeros_(self.conv_past.bias)
@@ -69,9 +112,13 @@ class model_encdec(nn.Module):
         nn.init.zeros_(self.encoder_past.bias_hh_l0)
         nn.init.zeros_(self.encoder_fut.bias_ih_l0)
         nn.init.zeros_(self.encoder_fut.bias_hh_l0)
-        nn.init.zeros_(self.decoder.bias_ih_l0)
-        nn.init.zeros_(self.decoder.bias_hh_l0)
+        # nn.init.zeros_(self.decoder.bias_ih_l0)
+        # nn.init.zeros_(self.decoder.bias_hh_l0)        
+        nn.init.zeros_(self.attn1.bias)
+        nn.init.zeros_(self.attn2.bias)
         nn.init.zeros_(self.FC_output.bias)
+        
+
 
     def forward(self, past, future):
         """
@@ -80,7 +127,8 @@ class model_encdec(nn.Module):
         :param future: future trajectory
         :return: decoded future
         """
-
+        
+        
         dim_batch = past.size()[0]
         zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key * 2) # dim , row , col
         prediction = torch.Tensor()
@@ -103,19 +151,38 @@ class model_encdec(nn.Module):
         output_past, state_past = self.encoder_past(past_embed)
         output_fut, state_fut = self.encoder_fut(future_embed)
 
+        
+        
         # state concatenation and decoding
         state_conc = torch.cat((state_past, state_fut), 2)
         input_fut = state_conc
-#         state_fut = zero_padding
-        for i in range(self.future_len):
-            
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(  torch.cat((input_fut, state_fut), dim=2)  ))))
-            output_decoder = self.decoder(att_wts)
-            # output_decoder, state_fut = self.decoder(input_fut, state_fut)
+        state_fut = zero_padding
 
+    
+        for i in range(self.future_len):
+                              
+        #     for k in range(self.op_length):
+        #     att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat((h.repeat(h_waypt.shape[0], 1, 1),
+        #                                                                           h_waypt), dim=2)))))
+        #     ip = att_wts.repeat(1, 1, h_waypt.shape[2])*h_waypt
+        #     ip = ip.sum(dim=0)
+        #     h = self.dec_gru(ip, h)
+        #     traj[k] = self.op_traj(h)
+
+        # traj = traj.permute(1, 0, 2)
+        # return traj
+ 
+            
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1( torch.cat(output_past, output_fut), dim=2))))
+            ip = att_wts.repeat(1, 1, state_conc.shape[2])*state_conc
+            ip = ip.sum(dim=0)
+            
+            output_decoder, state_fut = self.decoder(ip, state_fut)
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
             present = coords_next
             input_fut = zero_padding
+            
         return prediction
+    
