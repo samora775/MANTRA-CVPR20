@@ -140,8 +140,8 @@ class model_encdec(nn.Module):
         
         dim_batch = past.size()[0]
         zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key *2) # dim , row , col
-        print("zero_padding")
-        print(zero_padding.shape)
+        # print("zero_padding")
+        # print(zero_padding.shape)
         
         prediction = torch.Tensor()
         present = past[:, -1, :2].unsqueeze(1)
@@ -170,42 +170,42 @@ class model_encdec(nn.Module):
         h2 = state_past.squeeze()
         input_fut = state_conc
         state_fut = zero_padding
-        print("state_conc")
-        print(state_conc.shape)
-        print("output_past")
-        print(output_past.shape)
-        print("output_fut")
-        print(output_fut.shape)
+        # print("state_conc")
+        # print(state_conc.shape)
+        # print("output_past")
+        # print(output_past.shape)
+        # print("output_fut")
+        # print(output_fut.shape)
         
         for i in range(self.future_len):
                                      
             att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2)))))           
-            print("att_wts.shape")
-            print(att_wts.shape)
-            print("h.shape")
-            print(h.shape)
-            print("state_fut.shape")
-            print(state_fut.shape)
-            print("h2.shape")
-            print(h2.shape)
-            print("state_past.shape")
-            print(state_past.shape)
+            # print("att_wts.shape")
+            # print(att_wts.shape)
+            # print("h.shape")
+            # print(h.shape)
+            # print("state_fut.shape")
+            # print(state_fut.shape)
+            # print("h2.shape")
+            # print(h2.shape)
+            # print("state_past.shape")
+            # print(state_past.shape)
 
             ip = att_wts.repeat(1, 1, state_conc.shape[2])*state_conc
 
             ip = ip.unsqueeze(1)
 
             ip = ip.sum(dim=0)
-            print("ip.shape")
-            print(ip.shape)
-            print("state_fut.shape")
-            print(state_fut.shape)
+            # print("ip.shape")
+            # print(ip.shape)
+            # print("state_fut.shape")
+            # print(state_fut.shape)
             
             output_decoder, state_fut = self.decoder(ip, state_fut) #Input batch size 32 doesn't match hidden0 batch size 0
-            print("After  output_decoder")
+            # print("After  output_decoder")
             displacement_next = self.FC_output(output_decoder)
-            print("After FC Layer displacement_next")
+            # print("After FC Layer displacement_next")
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
             present = coords_next
