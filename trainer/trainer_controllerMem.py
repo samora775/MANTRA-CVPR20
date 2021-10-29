@@ -134,11 +134,11 @@ class Trainer():
         for param in self.mem_n2n.decoder.parameters():
             param.requires_grad = False
 
-#         for param in self.mem_n2n.att1.parameters():
-#             param.requires_grad = False
+        for param in self.mem_n2n.att1.parameters():
+            param.requires_grad = False
         
-#         for param in self.mem_n2n.att2.parameters():
-#             param.requires_grad = False
+        for param in self.mem_n2n.att2.parameters():
+            param.requires_grad = False
             
         for param in self.mem_n2n.FC_output.parameters():
             param.requires_grad = False
