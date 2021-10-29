@@ -42,8 +42,10 @@ class model_controllerMem(nn.Module):
         self.decoder = model_pretrained.decoder
         
         
-#         self.attn1 = model_pretrained.attn1
-#         self.attn2 = model_pretrained.attn2
+        # self.attn1 = model_pretrained.attn1
+        # self.attn2 = model_pretrained.attn2
+        self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
+        self.attn2 = nn.Linear(self.att_size, 1)
         
         self.FC_output = model_pretrained.FC_output
 
@@ -66,7 +68,7 @@ class model_controllerMem(nn.Module):
 
             # random element from train dataset to be added in memory
             j = random.randint(0, len(data_train)-1)
-            past = F[j][1].unsqueeze(0)
+            past = data_train[j][1].unsqueeze(0)
             future = data_train[j][2].unsqueeze(0)
             past = past.cuda()
             future = future.cuda()
@@ -93,48 +95,56 @@ class model_controllerMem(nn.Module):
         :param index: index of the memory
         :return: predicted future
         """
-        mem_past_i = self.memory_past[index]  # self.memory_past[0] print tensor([ 1.])
-        mem_fut_i = self.memory_fut[index]
+        mem_past_i = self.memory_past[index]  # [48]
+        mem_fut_i = self.memory_fut[index] #[48]
 
-        zero_padding = torch.zeros(1, 1, 96).cuda()
-        print("zero_padding")
-        print(zero_padding)
+        zero_padding = torch.zeros(1, 1, 96).cuda() # [1,1,96]
+        # print("zero_padding")
+        # print(zero_padding)
         
         
         present = torch.zeros(1, 2).cuda()
         prediction_single = torch.Tensor().cuda()
 
-        info_total = torch.cat((mem_past_i, mem_fut_i), 0)
-        input_dec = info_total.unsqueeze(0).unsqueeze(0)
-        print("info_total")
-        print(info_total)
-        print("input_dec")
-        print(input_dec)
+        info_total = torch.cat((mem_past_i, mem_fut_i), 0) #[96]
+        input_dec = info_total.unsqueeze(0).unsqueeze(0)#[48]   then=> [1,1,48]
+        # print("info_total")
+        # print(info_total)
+        # print("input_dec")
+        # print(input_dec)
         
-        h = mem_past_i.squeeze()
-        h2 = mem_fut_i.squeeze()
-        print("mem_past_i")
-        print(h)
-        print("mem_fut_i")
-        print(h2)
+        h = mem_past_i.unsqueeze(0) #[48]    before[1,48]
+        h2 = mem_fut_i.unsqueeze(0) #[48]
         
         
-        state_dec = zero_padding
+        
+        state_dec = zero_padding # [1,1,96]
         
 
         
         for i in range(self.future_len):
+            print("mem_past_i-h")
+            print(h)
+            print("mem_fut_i-h2")
+            print(h2)
             
-            # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-            #                                                                          h.repeat(h.shape[0], 1, 1) )  , 2)))))
-            # ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec
+            
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
+                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [1,32,32]
 
-            # ip = ip.unsqueeze(1)
+            print("att_wts.shape")
+            print(att_wts.shape)
+            ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
 
-            # ip = ip.sum(dim=0)
- 
-            # output_decoder, state_dec = self.decoder(ip, state_dec)
-            output_decoder, state_dec = self.decoder(input_dec, state_dec)
+            ip = ip.unsqueeze(1)
+
+            ip = ip.sum(dim=0) # [1,1,96]
+            print("ip.shape")
+            print(ip.shape)
+            
+            
+            output_decoder, state_dec = self.decoder(ip, state_dec)
+            # output_decoder, state_dec = self.decoder(input_dec, state_dec)
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction_single = torch.cat((prediction_single, coords_next), 1)
@@ -184,10 +194,10 @@ class model_controllerMem(nn.Module):
             for i in range(self.future_len):
                 
                 
-                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
-                output_decoder, state_dec = self.decoder(att_wts, state_dec)
+                # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
+                # output_decoder, state_dec = self.decoder(att_wts, state_dec)
                 
-                # output_decoder, state_dec = self.decoder(input_dec, state_dec)
+                output_decoder, state_dec = self.decoder(input_dec, state_dec)
                 displacement_next = self.FC_output(output_decoder)
                 coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
                 prediction_single = torch.cat((prediction_single, coords_next), 1)
@@ -268,11 +278,11 @@ class model_controllerMem(nn.Module):
                 
                 
                 
-                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
+                # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
                 # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat((state_conc.repeat(state_fut.shape[0], 1, 1),state_fut), dim=2)))))
-                output_decoder, state_dec = self.decoder(att_wts, state_dec)
+                # output_decoder, state_dec = self.decoder(att_wts, state_dec)
                 
-                # output_decoder, state_dec = self.decoder(input_dec, state_dec)
+                output_decoder, state_dec = self.decoder(input_dec, state_dec)
                 displacement_next = self.FC_output(output_decoder)
                 coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
                 prediction_single = torch.cat((prediction_single, coords_next), 1)
