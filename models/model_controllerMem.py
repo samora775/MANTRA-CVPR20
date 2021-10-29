@@ -42,8 +42,8 @@ class model_controllerMem(nn.Module):
         self.decoder = model_pretrained.decoder
         
         
-        self.attn1 = model_pretrained.attn1
-        self.attn2 = model_pretrained.attn2
+        # self.attn1 = model_pretrained.attn1
+        # self.attn2 = model_pretrained.attn2
         
         self.FC_output = model_pretrained.FC_output
 
@@ -125,16 +125,16 @@ class model_controllerMem(nn.Module):
         
         for i in range(self.future_len):
             
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                     h.repeat(h.shape[0], 1, 1) )  , 2)))))
-            ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec
+            # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
+            #                                                                          h.repeat(h.shape[0], 1, 1) )  , 2)))))
+            # ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec
 
-            ip = ip.unsqueeze(1)
+            # ip = ip.unsqueeze(1)
 
-            ip = ip.sum(dim=0)
+            # ip = ip.sum(dim=0)
  
-            output_decoder, state_dec = self.decoder(ip, state_dec)
-             # output_decoder, state_dec = self.decoder(input_dec, state_dec)
+            # output_decoder, state_dec = self.decoder(ip, state_dec)
+            output_decoder, state_dec = self.decoder(input_dec, state_dec)
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction_single = torch.cat((prediction_single, coords_next), 1)
@@ -306,3 +306,4 @@ class model_controllerMem(nn.Module):
         future_to_write = state_fut.squeeze()[index_writing]
         self.memory_past = torch.cat((self.memory_past, past_to_write), 0)
         self.memory_fut = torch.cat((self.memory_fut, future_to_write), 0)
+
