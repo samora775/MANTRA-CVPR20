@@ -42,8 +42,8 @@ class model_controllerMem(nn.Module):
         self.decoder = model_pretrained.decoder
         
         
-        # self.attn1 = model_pretrained.attn1
-        # self.attn2 = model_pretrained.attn2
+        self.attn1 = model_pretrained.attn1
+        self.attn2 = model_pretrained.attn2
         
         self.FC_output = model_pretrained.FC_output
 
