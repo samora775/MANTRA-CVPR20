@@ -59,15 +59,13 @@ class model_controllerMem(nn.Module):
         
         
         self.reset_parameters()
+   
     def reset_parameters(self):
         nn.init.kaiming_normal_(self.attn1.weight)
         nn.init.kaiming_normal_(self.attn2.weight)
         nn.init.zeros_(self.attn1.bias)
         nn.init.zeros_(self.attn2.bias)
-        
-    
-    
-    
+         
     def init_memory(self, data_train):
         """ Initialization: write samples in memory. 
             :param data_train: dataset  
@@ -205,7 +203,7 @@ class model_controllerMem(nn.Module):
                 
                 
                 att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+                                                                                      state_past.repeat(state_past.shape[0], 1, 1) )  , 2))))) # [32,32,1]
 
 
                 ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
