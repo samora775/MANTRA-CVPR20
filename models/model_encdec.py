@@ -139,7 +139,7 @@ class model_encdec(nn.Module):
         
         
         dim_batch = past.size()[0]
-        zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key *2) # dim , row , col
+        zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key *2) # dim , row , col [1,32,96]
         # print("zero_padding")
         # print(zero_padding.shape)
         
@@ -167,7 +167,7 @@ class model_encdec(nn.Module):
         # state concatenation and decoding
         state_conc = torch.cat((state_past, state_fut), 2)
         h = state_fut.squeeze()
-        h2 = state_past.squeeze()
+        h2 = state_past.squeeze() # [32,48]
         input_fut = state_conc
         state_fut = zero_padding
         # print("state_conc")
@@ -180,7 +180,7 @@ class model_encdec(nn.Module):
         for i in range(self.future_len):
                                      
             att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                     h.repeat(h.shape[0], 1, 1) )  , 2)))))           
+                                                                                     h.repeat(h.shape[0], 1, 1) )  , 2))))) #[1,32,32]         
             # print("att_wts.shape")
             # print(att_wts.shape)
             # print("h.shape")
@@ -196,7 +196,7 @@ class model_encdec(nn.Module):
 
             ip = ip.unsqueeze(1)
 
-            ip = ip.sum(dim=0)
+            ip = ip.sum(dim=0)  #[1,32,96]
             # print("ip.shape")
             # print(ip.shape)
             # print("state_fut.shape")
@@ -213,4 +213,22 @@ class model_encdec(nn.Module):
             
         return prediction
     
+
+
+
+
+
+        
+        # # Attention
+        # num_pixels = (self.dim_embedding_key*2).size(1)
+        # encoder_out = torch.Tensor(self.batch_size, num_pixels, self.dim_embedding_key*2) #encoded images, a tensor of dimension 
+        # decoder_hidden = torch.Tensor(self.batch_size, self.dim_embedding_key*2) # previous decoder output, a tensor of dimension 
+        
+        
+        # att1 = self.attn_en(encoder_out) # (batch_size, num_pixels, attention_dim)
+        # att2 = self.attn_de(decoder_hidden)  # (batch_size, attention_dim)
+        # att3 = self.attn_size(self.relu(att1 + att2.unsqueeze(1))).squeeze(2)  # (batch_size, num_pixels)
+        # soft = nn.Softmax(att3)
+        # att_w_en = (encoder_out * soft.unsqueeze(2)).sum(dim=1)  # (batch_size, encoder_dim)
+        
         
