@@ -56,7 +56,18 @@ class model_controllerMem(nn.Module):
         self.tanh = nn.Tanh()
 
         self.linear_controller = torch.nn.Linear(1, 1)
-
+        
+        
+        self.reset_parameters()
+    def reset_parameters(self):
+        nn.init.kaiming_normal_(self.attn1.weight)
+        nn.init.kaiming_normal_(self.attn2.weight)
+        nn.init.zeros_(self.attn1.bias)
+        nn.init.zeros_(self.attn2.bias)
+        
+    
+    
+    
     def init_memory(self, data_train):
         """ Initialization: write samples in memory. 
             :param data_train: dataset  
@@ -113,34 +124,30 @@ class model_controllerMem(nn.Module):
         # print("input_dec")
         # print(input_dec)
         
-        h = mem_past_i.unsqueeze(0) #[48]    before[1,48]
-        h2 = mem_fut_i.unsqueeze(0) #[48]
-        
-        
+        h = mem_past_i.unsqueeze(0) #[1,48]    
+        h2 = mem_fut_i.unsqueeze(0) #[1,48]
         
         state_dec = zero_padding # [1,1,96]
         
-
-        
         for i in range(self.future_len):
-            print("mem_past_i-h")
-            print(h)
-            print("mem_fut_i-h2")
-            print(h2)
+            # print("mem_past_i-h") #[1,48]
+            # print(h.shape)
+            # print("mem_fut_i-h2")  # [1,48]
+            # print(h2.shape)
             
             
             att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [1,32,32]
+                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [1,1,1]
 
-            print("att_wts.shape")
-            print(att_wts.shape)
+            # print("att_wts.shape")
+            # print(att_wts.shape)
             ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
 
             ip = ip.unsqueeze(1)
 
             ip = ip.sum(dim=0) # [1,1,96]
-            print("ip.shape")
-            print(ip.shape)
+            # print("ip.shape")
+            # print(ip.shape)
             
             
             output_decoder, state_dec = self.decoder(ip, state_dec)
@@ -162,7 +169,7 @@ class model_controllerMem(nn.Module):
         """
 
         dim_batch = past.size()[0]
-        zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key * 2)
+        zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key * 2) #[1,32,96]
         prediction = torch.Tensor()
         present_temp = past[:, -1].unsqueeze(1)
         if self.use_cuda:
@@ -188,16 +195,28 @@ class model_controllerMem(nn.Module):
             ind = self.index_max[:, i_track]
             info_future = self.memory_fut[ind]
             info_total = torch.cat((state_past, info_future.unsqueeze(0)), 2)
-
+           
+            h = state_past.unsqueeze(0) #[32,48]    
+            h2 = info_future.unsqueeze(0) #[32,48]
+            
             input_dec = info_total
             state_dec = zero_padding
             for i in range(self.future_len):
                 
                 
-                # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
-                # output_decoder, state_dec = self.decoder(att_wts, state_dec)
+                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
+                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+
+
+                ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
+    
+                ip = ip.unsqueeze(1)
+    
+                ip = ip.sum(dim=0) # [1,32,96]
                 
-                output_decoder, state_dec = self.decoder(input_dec, state_dec)
+                output_decoder, state_dec = self.decoder(ip, state_dec)
+                
+                # output_decoder, state_dec = self.decoder(input_dec, state_dec)
                 displacement_next = self.FC_output(output_decoder)
                 coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
                 prediction_single = torch.cat((prediction_single, coords_next), 1)
@@ -250,7 +269,7 @@ class model_controllerMem(nn.Module):
             num_prediction = self.num_prediction
 
         dim_batch = past.size()[0]
-        zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key * 2).cuda()
+        zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key * 2).cuda() #[1,32,96]
         prediction = torch.Tensor().cuda()
         present_temp = past[:, -1].unsqueeze(1)
 
@@ -272,17 +291,26 @@ class model_controllerMem(nn.Module):
             ind = index_max[:, i_track]
             info_future = self.memory_fut[ind]
             info_total = torch.cat((state_past, info_future.unsqueeze(0)), 2)
+            
+            h = state_past.unsqueeze(0) #[32,48]    
+            h2 = info_future.unsqueeze(0) #[32,48]
+            
             input_dec = info_total
             state_dec = zero_padding
             for i in range(self.future_len):
                 
+                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
+                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+
+                ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
+    
+                ip = ip.unsqueeze(1)
+    
+                ip = ip.sum(dim=0) # [1,32,96]
                 
+                output_decoder, state_dec = self.decoder(ip, state_dec)
                 
-                # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(input_dec))))
-                # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat((state_conc.repeat(state_fut.shape[0], 1, 1),state_fut), dim=2)))))
-                # output_decoder, state_dec = self.decoder(att_wts, state_dec)
-                
-                output_decoder, state_dec = self.decoder(input_dec, state_dec)
+                # output_decoder, state_dec = self.decoder(input_dec, state_dec)
                 displacement_next = self.FC_output(output_decoder)
                 coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
                 prediction_single = torch.cat((prediction_single, coords_next), 1)
