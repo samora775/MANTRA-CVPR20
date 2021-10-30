@@ -75,7 +75,8 @@ class Trainer:
             "dim_embedding_key": config.dim_embedding_key,
             "num_prediction": self.num_prediction,
             "past_len": config.past_len,
-            "future_len": config.future_len
+            "future_len": config.future_len,
+            "att_size": config.att_size
         }
         self.max_epochs = config.max_epochs
 
