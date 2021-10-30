@@ -19,7 +19,7 @@ class model_memory_IRM(nn.Module):
         self.num_prediction = settings["num_prediction"]
         self.past_len = settings["past_len"]
         self.future_len = settings["future_len"]
-        self.att_size = settings['att_size']
+        self.att_size = settings["att_size"]
 
 
         # similarity criterion
@@ -48,7 +48,7 @@ class model_memory_IRM(nn.Module):
         self.FC_output = model_pretrained.FC_output
        
         
-       # self.relu = nn.ReLU()
+        # self.relu = nn.ReLU()
         # self.softmax = nn.Softmax()
         self.leaky_relu = nn.LeakyReLU(0.1)
         self.softmax_att = nn.Softmax(dim=0)
@@ -142,6 +142,15 @@ class model_memory_IRM(nn.Module):
         :param scene: surrounding map
         :return: predicted future
         """
+        # self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
+        # self.attn2 = nn.Linear(self.att_size, 1)
+        
+        # self.leaky_relu = nn.LeakyReLU(0.1)
+        # self.softmax_att = nn.Softmax(dim=0)
+        # self.tanh = nn.Tanh()
+        
+        
+        
         dim_batch = past.size()[0]
         zero_padding = torch.zeros(1, dim_batch * self.num_prediction, self.dim_embedding_key * 2).cuda() #[1,32*5,96]
         prediction = torch.Tensor().cuda()
@@ -174,7 +183,7 @@ class model_memory_IRM(nn.Module):
         for i in range(self.future_len):
             
             att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                  h.repeat(h.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+                                                                                  state_past.repeat(state_past.shape[0], 1, 1) )  , 2))))) # [32,32,1]
 
             ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
             ip = ip.unsqueeze(1)
