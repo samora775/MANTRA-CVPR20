@@ -85,7 +85,7 @@ class Trainer:
         self.mem_n2n.past_len = config.past_len
         self.mem_n2n.future_len = config.future_len
         
-        self.mem_n2n.att_size = config.att_size
+        # self.mem_n2n.att_size = config.att_size
         
         self.criterionLoss = nn.MSELoss()
         self.opt = torch.optim.Adam(self.mem_n2n.parameters(), lr=config.learning_rate)
@@ -143,11 +143,11 @@ class Trainer:
             param.requires_grad = False
             
             
-        for param in self.mem_n2n.att1.parameters():
-            param.requires_grad = False
+        # for param in self.mem_n2n.att1.parameters():
+        #     param.requires_grad = False
         
-        for param in self.mem_n2n.att2.parameters():
-            param.requires_grad = False
+        # for param in self.mem_n2n.att2.parameters():
+        #     param.requires_grad = False
             
         for param in self.mem_n2n.FC_output.parameters():
             param.requires_grad = False
