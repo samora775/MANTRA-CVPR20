@@ -256,5 +256,3 @@ class model_controllerMem(nn.Module):
         future_to_write = state_fut.squeeze()[index_writing]
         self.memory_past = torch.cat((self.memory_past, past_to_write), 0)
         self.memory_fut = torch.cat((self.memory_fut, future_to_write), 0)
-
-
