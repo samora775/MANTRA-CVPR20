@@ -57,7 +57,7 @@ class model_controllerMem(nn.Module):
 
             # random element from train dataset to be added in memory
             j = random.randint(0, len(data_train)-1)
-            past = F[j][1].unsqueeze(0)
+            past = data_train[j][1].unsqueeze(0)
             future = data_train[j][2].unsqueeze(0)
             past = past.cuda()
             future = future.cuda()
