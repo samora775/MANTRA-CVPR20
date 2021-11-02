@@ -165,42 +165,69 @@ class model_encdec(nn.Module):
         
         
         # state concatenation and decoding
-        state_conc = torch.cat((state_past, state_fut), 2)
-        h = state_fut.squeeze()
-        h2 = state_past.squeeze() # [32,48]
-        input_fut = state_conc
-        state_fut = zero_padding
-        # print("state_conc")
-        # print(state_conc.shape)
+        state_conc = torch.cat((state_past, state_fut), 2) #[1,32,96]
+
+      
+        # print("111111111111111111")
+
         # print("output_past")
         # print(output_past.shape)
         # print("output_fut")
         # print(output_fut.shape)
+        # print("state_past")
+        # print(state_past.shape)
+        # print("state_fut")
+        # print(state_fut.shape)
+        # print("state_conc")
+        # print(state_conc.shape)
+        # print("111111111111111111")    
+        
+        
+        # h = state_fut.squeeze()
+        # h2 = state_past.squeeze() # [32,48]
+        hp = state_past
+        hf = state_fut
+        input_fut = state_conc
+        state_fut = zero_padding
         
         for i in range(self.future_len):
                                      
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                     h.repeat(h.shape[0], 1, 1) )  , 2))))) #[1,32,32]         
+            # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1), #[1,32,96]
+            #                                                                          h.repeat(h.shape[0], 1, 1) )  , 2))))) #[1,32,32] [L,N,E] batch size = false, if true= [L,N,E]       
+            
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                     hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
+
             # print("att_wts.shape")
             # print(att_wts.shape)
-            # print("h.shape")
-            # print(h.shape)
-            # print("state_fut.shape")
-            # print(state_fut.shape)
-            # print("h2.shape")
-            # print(h2.shape)
-            # print("state_past.shape")
-            # print(state_past.shape)
-
             ip = att_wts.repeat(1, 1, state_conc.shape[2])*state_conc
-
+            # print("ip.shape111")
+            # print(ip.shape) #[1,32,96]
+            
             ip = ip.unsqueeze(1)
-
-            ip = ip.sum(dim=0)  #[1,32,96]
-            # print("ip.shape")
+            # print("ip.shape222")
             # print(ip.shape)
-            # print("state_fut.shape")
-            # print(state_fut.shape)
+            
+            ip = ip.sum(dim=0)  #[1,32,96] [L,N,E]    
+            # print("ip.shape333")
+            # print(ip.shape) #[32,96]
+            
+            # s_conc = state_conc.squeeze()
+            
+            
+            # s_conc = state_conc.squeeze()
+            # # state_conc= state_conc.permute(1,0,2)
+            # # ip= ip.permute(1,0,2)
+            # concat_att = torch.bmm(ip, state_conc) #[]
+            # print("concat_att")
+            # print(concat_att.shape) #[32,96]
+            
+            # multihead_attn = nn.MultiheadAttention(state_conc, 1)
+            # attn_output = multihead_attn(state_conc, state_conc, state_conc)
+            # print("multihead_attn")
+            # print(attn_output.shape)
+            # print("attn_output_weights")
+            # print(attn_output_weights.shape)            
             
             output_decoder, state_fut = self.decoder(ip, state_fut) #Input batch size 32 doesn't match hidden0 batch size 0
             # print("After  output_decoder")
@@ -212,23 +239,3 @@ class model_encdec(nn.Module):
             input_fut = zero_padding
             
         return prediction
-    
-
-
-
-
-
-        
-        # # Attention
-        # num_pixels = (self.dim_embedding_key*2).size(1)
-        # encoder_out = torch.Tensor(self.batch_size, num_pixels, self.dim_embedding_key*2) #encoded images, a tensor of dimension 
-        # decoder_hidden = torch.Tensor(self.batch_size, self.dim_embedding_key*2) # previous decoder output, a tensor of dimension 
-        
-        
-        # att1 = self.attn_en(encoder_out) # (batch_size, num_pixels, attention_dim)
-        # att2 = self.attn_de(decoder_hidden)  # (batch_size, attention_dim)
-        # att3 = self.attn_size(self.relu(att1 + att2.unsqueeze(1))).squeeze(2)  # (batch_size, num_pixels)
-        # soft = nn.Softmax(att3)
-        # att_w_en = (encoder_out * soft.unsqueeze(2)).sum(dim=1)  # (batch_size, encoder_dim)
-        
-        
