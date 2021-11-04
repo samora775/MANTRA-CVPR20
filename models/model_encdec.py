@@ -36,57 +36,14 @@ class model_encdec(nn.Module):
         self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key,1, batch_first=True)
         self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
         
-        # print("encoder")
-        # print(self.encoder_fut,self.encoder_fut)
-        # # Attention
-        
-        # # self.attention = Attention(2* self.dim_embedding_key, 2* self.dim_embedding_key, att_size)  # attention network
-        # self.attn_en = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
-        # self.attn_de = nn.Linear(2* self.dim_embedding_key + self.dim_embedding_key, self.att_size)
-        # self.attn_size = nn.Linear(self.att_size, 1)
-        
-        # decoder
-        # self.decoder = nn.GRU( 2*self.dim_embedding_key , 2*self.dim_embedding_key ) #Input batch size 32 doesn't match hidden0 batch size 1
-        # print("decoder")
-        # print(self.decoder)
         
         self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 1, batch_first=False)
 
         self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
         self.attn2 = nn.Linear(self.att_size, 1)
         
-        # print("attn1")
-        # print(self.attn1)
-        # print("attn2")
-        # print(self.attn2)
         
         self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2 , 2)
-        # self.op_traj = nn.Linear(self.dim_embedding_key, 2)
-
-        
-        # self.init_h = nn.Linear(self.dim_embedding_key * 2, self.dim_embedding_key * 2)
-        # self.fcs = nn.Linear(self.dim_embedding_key * 2, self.dim_embedding_key * 2)
-        # self.sigmoid = nn.Sigmoid()
- 
-    
- 
-    # # encoder-decoder
-    #     self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
-    #     self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
-    #     self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 1, batch_first=False)
-    #     self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2, 2)
-         
-        # # Decoder:
-        # self.dec_gru = nn.GRUCell(2*self.waypt_enc_size, self.traj_enc_size)
-        # self.attn1 = nn.Linear(2*self.waypt_enc_size + self.traj_enc_size, self.att_size)
-        # self.attn2 = nn.Linear(self.att_size, 1)
-        # self.op_traj = nn.Linear(self.traj_enc_size, 2)
-        
-       
-        
-        
-
-    
 
         # activation function
         self.leaky_relu = nn.LeakyReLU(0.1)
@@ -96,11 +53,6 @@ class model_encdec(nn.Module):
         # weight initialization: kaiming
         self.reset_parameters()
         
-        
-    # def init_hidden_state(self, decoder):
-    #     h = self.init_h(decoder.mean(dim=1))  # (batch_size, decoder_dim)
-    #     return h
-        
 
     def reset_parameters(self):
         nn.init.kaiming_normal_(self.conv_past.weight)
@@ -109,8 +61,8 @@ class model_encdec(nn.Module):
         nn.init.kaiming_normal_(self.encoder_past.weight_hh_l0)
         nn.init.kaiming_normal_(self.encoder_fut.weight_ih_l0)
         nn.init.kaiming_normal_(self.encoder_fut.weight_hh_l0)
-        # nn.init.kaiming_normal_(self.decoder.weight_ih_l0)
-        # nn.init.kaiming_normal_(self.decoder.weight_hh_l0)
+        nn.init.kaiming_normal_(self.decoder.weight_ih_l0)
+        nn.init.kaiming_normal_(self.decoder.weight_hh_l0)
         nn.init.kaiming_normal_(self.attn1.weight)
         nn.init.kaiming_normal_(self.attn2.weight)
         nn.init.kaiming_normal_(self.FC_output.weight)
@@ -121,8 +73,8 @@ class model_encdec(nn.Module):
         nn.init.zeros_(self.encoder_past.bias_hh_l0)
         nn.init.zeros_(self.encoder_fut.bias_ih_l0)
         nn.init.zeros_(self.encoder_fut.bias_hh_l0)
-        # nn.init.zeros_(self.decoder.bias_ih_l0)
-        # nn.init.zeros_(self.decoder.bias_hh_l0)        
+        nn.init.zeros_(self.decoder.bias_ih_l0)
+        nn.init.zeros_(self.decoder.bias_hh_l0)        
         nn.init.zeros_(self.attn1.bias)
         nn.init.zeros_(self.attn2.bias)
         nn.init.zeros_(self.FC_output.bias)
@@ -140,8 +92,6 @@ class model_encdec(nn.Module):
         
         dim_batch = past.size()[0]
         zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key *2) # dim , row , col [1,32,96]
-        # print("zero_padding")
-        # print(zero_padding.shape)
         
         prediction = torch.Tensor()
         present = past[:, -1, :2].unsqueeze(1)
@@ -167,24 +117,7 @@ class model_encdec(nn.Module):
         # state concatenation and decoding
         state_conc = torch.cat((state_past, state_fut), 2) #[1,32,96]
 
-      
-        # print("111111111111111111")
 
-        # print("output_past")
-        # print(output_past.shape)
-        # print("output_fut")
-        # print(output_fut.shape)
-        # print("state_past")
-        # print(state_past.shape)
-        # print("state_fut")
-        # print(state_fut.shape)
-        # print("state_conc")
-        # print(state_conc.shape)
-        # print("111111111111111111")    
-        
-        
-        # h = state_fut.squeeze()
-        # h2 = state_past.squeeze() # [32,48]
         hp = state_past
         hf = state_fut
         input_fut = state_conc
@@ -192,47 +125,16 @@ class model_encdec(nn.Module):
         
         for i in range(self.future_len):
                                      
-            # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1), #[1,32,96]
-            #                                                                          h.repeat(h.shape[0], 1, 1) )  , 2))))) #[1,32,32] [L,N,E] batch size = false, if true= [L,N,E]       
-            
+         
             att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
                                                                                      hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
 
-            # print("att_wts.shape")
-            # print(att_wts.shape)
             ip = att_wts.repeat(1, 1, state_conc.shape[2])*state_conc
-            # print("ip.shape111")
-            # print(ip.shape) #[1,32,96]
-            
             ip = ip.unsqueeze(1)
-            # print("ip.shape222")
-            # print(ip.shape)
-            
-            ip = ip.sum(dim=0)  #[1,32,96] [L,N,E]    
-            # print("ip.shape333")
-            # print(ip.shape) #[32,96]
-            
-            # s_conc = state_conc.squeeze()
-            
-            
-            # s_conc = state_conc.squeeze()
-            # # state_conc= state_conc.permute(1,0,2)
-            # # ip= ip.permute(1,0,2)
-            # concat_att = torch.bmm(ip, state_conc) #[]
-            # print("concat_att")
-            # print(concat_att.shape) #[32,96]
-            
-            # multihead_attn = nn.MultiheadAttention(state_conc, 1)
-            # attn_output = multihead_attn(state_conc, state_conc, state_conc)
-            # print("multihead_attn")
-            # print(attn_output.shape)
-            # print("attn_output_weights")
-            # print(attn_output_weights.shape)            
-            
+            ip = ip.sum(dim=0)  #[1,32,96] [L,N,E]             
+        
             output_decoder, state_fut = self.decoder(ip, state_fut) #Input batch size 32 doesn't match hidden0 batch size 0
-            # print("After  output_decoder")
             displacement_next = self.FC_output(output_decoder)
-            # print("After FC Layer displacement_next")
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
             present = coords_next
