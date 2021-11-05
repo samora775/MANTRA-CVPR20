@@ -71,8 +71,7 @@ class Trainer():
             "dim_embedding_key": config.dim_embedding_key,
             "num_prediction": config.preds,
             "past_len": config.past_len,
-            "future_len": config.future_len,
-            "att_size": config.att_size
+            "future_len": config.future_len
         }
         self.max_epochs = config.max_epochs
         # load pretrained model and create memory model
@@ -101,6 +100,9 @@ class Trainer():
         self.writer.add_text('Training Configuration', 'batch_size: {}'.format(self.config.batch_size), 0)
         self.writer.add_text('Training Configuration', 'learning rate init: {}'.format(self.config.learning_rate), 0)
         self.writer.add_text('Training Configuration', 'dim_embedding_key: {}'.format(self.config.dim_embedding_key), 0)
+        
+        #self.writer.add_graph(self.model)
+
 
     def write_details(self):
         """
@@ -133,12 +135,6 @@ class Trainer():
             param.requires_grad = False
         for param in self.mem_n2n.decoder.parameters():
             param.requires_grad = False
-
-        # for param in self.mem_n2n.att1.parameters():
-        #     param.requires_grad = False
-        
-        # for param in self.mem_n2n.att2.parameters():
-        #     param.requires_grad = False
             
         for param in self.mem_n2n.FC_output.parameters():
             param.requires_grad = False
