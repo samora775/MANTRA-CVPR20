@@ -33,9 +33,11 @@ class model_encdec(nn.Module):
         # encoder-decoder
         
         # encoder
-        self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key,1, batch_first=True)
-        self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
+#         self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key,1, batch_first=True)
+#         self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
         
+        self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key, 2, batch_first=True, bidirectional=True)
+        self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 2, batch_first=True, bidirectional=True)
         
         self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 1, batch_first=False)
 
