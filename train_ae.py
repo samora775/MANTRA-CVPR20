@@ -27,7 +27,6 @@ def main(config):
     print('start training autoencoder')
     t.fit()
 
-
 if __name__ == "__main__":
     config = parse_config()
     main(config)
