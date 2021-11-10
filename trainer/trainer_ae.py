@@ -112,7 +112,6 @@ class Trainer:
         self.writer.add_text('Training Configuration', 'batch_size: {}'.format(self.config.batch_size), 0)
         self.writer.add_text('Training Configuration', 'learning rate init: {}'.format(self.config.learning_rate), 0)
         self.writer.add_text('Training Configuration', 'dim_embedding_key: {}'.format(self.config.dim_embedding_key), 0)
-        
 
     def write_details(self):
         """
@@ -226,7 +225,6 @@ class Trainer:
 
         # Save final trained model
         torch.save(self.mem_n2n, self.folder_test + 'model_ae_' + self.name_test)
-        # self.writer.add_graph(self.mem_n2n)
 
     def evaluate(self, loader, epoch=0):
         """
