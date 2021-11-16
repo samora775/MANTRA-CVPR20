@@ -40,10 +40,11 @@ class model_memory_IRM(nn.Module):
         self.encoder_fut = model_pretrained.encoder_fut
         self.decoder = model_pretrained.decoder
         
-        # self.attn1 = model_pretrained.attn1
-        # self.attn2 = model_pretrained.attn2
-        self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
-        self.attn2 = nn.Linear(self.att_size, 1)
+        self.attn1 = model_pretrained.attn1
+        self.attn2 = model_pretrained.attn2
+
+        # self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
+        # self.attn2 = nn.Linear(self.att_size, 1)
         
         self.FC_output = model_pretrained.FC_output
        
@@ -82,8 +83,8 @@ class model_memory_IRM(nn.Module):
         nn.init.kaiming_normal_(self.convScene_2[0].weight)
         nn.init.kaiming_normal_(self.fc_refine.weight)
         
-        nn.init.kaiming_normal_(self.attn1.weight)
-        nn.init.kaiming_normal_(self.attn2.weight)
+        # nn.init.kaiming_normal_(self.attn1.weight)
+        # nn.init.kaiming_normal_(self.attn2.weight)
     
         nn.init.zeros_(self.RNN_scene.bias_ih_l0)
         nn.init.zeros_(self.RNN_scene.bias_hh_l0)
@@ -93,8 +94,8 @@ class model_memory_IRM(nn.Module):
         nn.init.zeros_(self.convScene_2[0].bias)
         nn.init.zeros_(self.fc_refine.bias)
 
-        nn.init.zeros_(self.attn1.bias)
-        nn.init.zeros_(self.attn2.bias)
+        # nn.init.zeros_(self.attn1.bias)
+        # nn.init.zeros_(self.attn2.bias)
         
         
     def init_memory(self, data_train):
@@ -141,16 +142,7 @@ class model_memory_IRM(nn.Module):
         :param past: past trajectory
         :param scene: surrounding map
         :return: predicted future
-        """
-        # self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
-        # self.attn2 = nn.Linear(self.att_size, 1)
-        
-        # self.leaky_relu = nn.LeakyReLU(0.1)
-        # self.softmax_att = nn.Softmax(dim=0)
-        # self.tanh = nn.Tanh()
-        
-        
-        
+        """        
         dim_batch = past.size()[0]
         zero_padding = torch.zeros(1, dim_batch * self.num_prediction, self.dim_embedding_key * 2).cuda() #[1,32*5,96]
         prediction = torch.Tensor().cuda()
@@ -175,21 +167,23 @@ class model_memory_IRM(nn.Module):
         info_future = self.memory_fut[ind]
         info_total = torch.cat((state_past, info_future.unsqueeze(0)), 2)
         
-        h = state_past.unsqueeze(0) #[32,48]   
-        h2 = info_future.unsqueeze(0) #[32,48]
+
+                    
+        hp =  state_past
+        hf =  info_future.unsqueeze(0)
         
         input_dec = info_total
         state_dec = zero_padding
         for i in range(self.future_len):
-            
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                  state_past.repeat(state_past.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+                
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                  hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
 
-            ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
+            ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
             ip = ip.unsqueeze(1)
-            ip = ip.sum(dim=0) # [1,32,96]
-            output_decoder, state_dec = self.decoder(ip, state_dec)
+            ip = ip.sum(dim=0) # [1,1,96]
             
+            output_decoder, state_dec = self.decoder(ip, state_dec)
             # output_decoder, state_dec = self.decoder(input_dec, state_dec)
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
@@ -257,22 +251,24 @@ class model_memory_IRM(nn.Module):
         info_future = self.memory_fut[ind]
         info_total = torch.cat((state_past_repeat, info_future.unsqueeze(0)), 2)
         
-        h = state_past_repeat.unsqueeze(0) #[32,48]    
-        h2 = info_future.unsqueeze(0) #[32,48]
+        # h = state_past_repeat.unsqueeze(0) #[32,48]    
+        # h2 = info_future.unsqueeze(0) #[32,48]
+                    
+        hp =  state_past
+        hf =  info_future.unsqueeze(0)
         
         input_dec = info_total
         state_dec = zero_padding
         for i in range(self.future_len):
             
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                  h.repeat(h.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                 hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
 
-            ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
+            ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
             ip = ip.unsqueeze(1)
-            ip = ip.sum(dim=0) # [1,32,96]
-            output_decoder, state_dec = self.decoder(ip, state_dec)
+            ip = ip.sum(dim=0) # [1,1,96]
             
-            output_decoder, state_dec = self.decoder(input_dec, state_dec)
+            output_decoder, state_dec = self.decoder(ip, state_dec)
             displacement_next = self.FC_output(output_decoder)
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
@@ -333,11 +329,4 @@ class model_memory_IRM(nn.Module):
         # future = torch.transpose(future, 1, 2)
         # future_track_to_write = future[index_writing]
         # self.memory_count = torch.cat((self.memory_count, future_track_to_write), 0)
-
-
-
-
-
-
-
 
