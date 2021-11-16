@@ -42,11 +42,9 @@ class model_controllerMem(nn.Module):
         self.decoder = model_pretrained.decoder
         
         
-        # self.attn1 = model_pretrained.attn1
-        # self.attn2 = model_pretrained.attn2
-        self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
-        self.attn2 = nn.Linear(self.att_size, 1)
-        
+        self.attn1 = model_pretrained.attn1
+        self.attn2 = model_pretrained.attn2
+
         self.FC_output = model_pretrained.FC_output
 
         # activation functions
@@ -58,13 +56,6 @@ class model_controllerMem(nn.Module):
         self.linear_controller = torch.nn.Linear(1, 1)
         
         
-        self.reset_parameters()
-   
-    def reset_parameters(self):
-        nn.init.kaiming_normal_(self.attn1.weight)
-        nn.init.kaiming_normal_(self.attn2.weight)
-        nn.init.zeros_(self.attn1.bias)
-        nn.init.zeros_(self.attn2.bias)
          
     def init_memory(self, data_train):
         """ Initialization: write samples in memory. 
@@ -108,8 +99,7 @@ class model_controllerMem(nn.Module):
         mem_fut_i = self.memory_fut[index] #[48]
 
         zero_padding = torch.zeros(1, 1, 96).cuda() # [1,1,96]
-        # print("zero_padding")
-        # print(zero_padding)
+
         
         
         present = torch.zeros(1, 2).cuda()
@@ -117,37 +107,22 @@ class model_controllerMem(nn.Module):
 
         info_total = torch.cat((mem_past_i, mem_fut_i), 0) #[96]
         input_dec = info_total.unsqueeze(0).unsqueeze(0)#[48]   then=> [1,1,48]
-        # print("info_total")
-        # print(info_total)
-        # print("input_dec")
-        # print(input_dec)
+
         
-        h = mem_past_i.unsqueeze(0) #[1,48]    
-        h2 = mem_fut_i.unsqueeze(0) #[1,48]
+        hp =  mem_past_i.unsqueeze(0)
+        hf =  mem_fut_i.unsqueeze(0)
         
         state_dec = zero_padding # [1,1,96]
         
         for i in range(self.future_len):
-            # print("mem_past_i-h") #[1,48]
-            # print(h.shape)
-            # print("mem_fut_i-h2")  # [1,48]
-            # print(h2.shape)
-            
-            
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [1,1,1]
 
-            # print("att_wts.shape")
-            # print(att_wts.shape)
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                     hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
+
             ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
-
             ip = ip.unsqueeze(1)
-
             ip = ip.sum(dim=0) # [1,1,96]
-            # print("ip.shape")
-            # print(ip.shape)
-            
-            
+
             output_decoder, state_dec = self.decoder(ip, state_dec)
             # output_decoder, state_dec = self.decoder(input_dec, state_dec)
             displacement_next = self.FC_output(output_decoder)
@@ -194,26 +169,21 @@ class model_controllerMem(nn.Module):
             info_future = self.memory_fut[ind]
             info_total = torch.cat((state_past, info_future.unsqueeze(0)), 2)
            
-            h = state_past.unsqueeze(0) #[32,48]    
-            h2 = info_future.unsqueeze(0) #[32,48]
+            hp =  state_past
+            hf =  info_future.unsqueeze(0)
             
             input_dec = info_total
             state_dec = zero_padding
             for i in range(self.future_len):
                 
-                
-                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                      state_past.repeat(state_past.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                      hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
 
-
-                ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
-    
+                ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
                 ip = ip.unsqueeze(1)
-    
-                ip = ip.sum(dim=0) # [1,32,96]
-                
+                ip = ip.sum(dim=0) # [1,1,96]
+
                 output_decoder, state_dec = self.decoder(ip, state_dec)
-                
                 # output_decoder, state_dec = self.decoder(input_dec, state_dec)
                 displacement_next = self.FC_output(output_decoder)
                 coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
@@ -290,25 +260,21 @@ class model_controllerMem(nn.Module):
             info_future = self.memory_fut[ind]
             info_total = torch.cat((state_past, info_future.unsqueeze(0)), 2)
             
-            h = state_past.unsqueeze(0) #[32,48]    
-            h2 = info_future.unsqueeze(0) #[32,48]
+            hp =  state_past
+            hf =  info_future.unsqueeze(0)
             
             input_dec = info_total
             state_dec = zero_padding
             for i in range(self.future_len):
                 
-                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (h2.repeat(h2.shape[0], 1, 1),
-                                                                                      h.repeat(h.shape[0], 1, 1) )  , 2))))) # [32,32,1]
+                att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                     hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
 
-                ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec #  [32,96]
-    
+                ip = att_wts.repeat(1, 1, input_dec.shape[2])*input_dec # before [1,96]
                 ip = ip.unsqueeze(1)
-    
-                ip = ip.sum(dim=0) # [1,32,96]
-                
+                ip = ip.sum(dim=0) # [1,1,96]
+
                 output_decoder, state_dec = self.decoder(ip, state_dec)
-                
-                # output_decoder, state_dec = self.decoder(input_dec, state_dec)
                 displacement_next = self.FC_output(output_decoder)
                 coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
                 prediction_single = torch.cat((prediction_single, coords_next), 1)
