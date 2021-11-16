@@ -31,50 +31,19 @@ class model_encdec(nn.Module):
 
         
         # encoder-decoder
-
-        # self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key,1, batch_first=True)
-        # self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
-        self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key, 2, batch_first=True, bidirectional=True)
-        self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 2, batch_first=True, bidirectional=True)
-
+        
+        # encoder
+        self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key,1, batch_first=True)
+        self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
+        
         
         self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 1, batch_first=False)
 
-        self.attn1 = nn.Linear(2* self.dim_embedding_key + 2*self.dim_embedding_key, self.att_size)
+        self.attn1 = nn.Linear(self.dim_embedding_key + self.dim_embedding_key, self.att_size)
         self.attn2 = nn.Linear(self.att_size, 1)
         
-        # print("attn1")
-        # print(self.attn1)
-        # print("attn2")
-        # print(self.attn2)
         
         self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2 , 2)
-        # self.op_traj = nn.Linear(self.dim_embedding_key, 2)
-
-        
-        # self.init_h = nn.Linear(self.dim_embedding_key * 2, self.dim_embedding_key * 2)
-        # self.fcs = nn.Linear(self.dim_embedding_key * 2, self.dim_embedding_key * 2)
-        # self.sigmoid = nn.Sigmoid()
- 
-    
- 
-    # # encoder-decoder
-    #     self.encoder_past = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
-    #     self.encoder_fut = nn.GRU(input_gru, self.dim_embedding_key, 1, batch_first=True)
-    #     self.decoder = nn.GRU(self.dim_embedding_key * 2, self.dim_embedding_key * 2, 1, batch_first=False)
-    #     self.FC_output = torch.nn.Linear(self.dim_embedding_key * 2, 2)
-         
-        # # Decoder:
-        # self.dec_gru = nn.GRUCell(2*self.waypt_enc_size, self.traj_enc_size)
-        # self.attn1 = nn.Linear(2*self.waypt_enc_size + self.traj_enc_size, self.att_size)
-        # self.attn2 = nn.Linear(self.att_size, 1)
-        # self.op_traj = nn.Linear(self.traj_enc_size, 2)
-        
-       
-        
-        
-
-    
 
         # activation function
         self.leaky_relu = nn.LeakyReLU(0.1)
@@ -83,11 +52,6 @@ class model_encdec(nn.Module):
 
         # weight initialization: kaiming
         self.reset_parameters()
-        
-        
-    # def init_hidden_state(self, decoder):
-    #     h = self.init_h(decoder.mean(dim=1))  # (batch_size, decoder_dim)
-    #     return h
         
 
     def reset_parameters(self):
@@ -128,8 +92,6 @@ class model_encdec(nn.Module):
         
         dim_batch = past.size()[0]
         zero_padding = torch.zeros(1, dim_batch, self.dim_embedding_key *2) # dim , row , col [1,32,96]
-        # print("zero_padding")
-        # print(zero_padding.shape)
         
         prediction = torch.Tensor()
         present = past[:, -1, :2].unsqueeze(1)
@@ -155,8 +117,7 @@ class model_encdec(nn.Module):
         # state concatenation and decoding
         state_conc = torch.cat((state_past, state_fut), 2) #[1,32,96]
 
-        # h = state_fut.squeeze()
-        # h2 = state_past.squeeze() # [32,48]
+
         hp = state_past
         hf = state_fut
         input_fut = state_conc
@@ -164,26 +125,16 @@ class model_encdec(nn.Module):
         
         for i in range(self.future_len):
                                      
-            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat( (hp.shape[0] ,hf.shape[0] )  , 2))))) #[1,32,32] [L,N,E] batch size = false, if true= [L,N,E]       
-            
-            # att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat((h.repeat(h_waypt.shape[0], 1, 1),
-                                                                                  # h_waypt), dim=2)))))
-            # print("att_wts.shape")
-            # print(att_wts.shape)
-            ip = att_wts.repeat(1, 1, state_conc.shape[2])*state_conc
-            # print("ip.shape111")
-            # print(ip.shape) #[1,32,96]
-            
-            ip = ip.unsqueeze(1)
-            # print("ip.shape222")
-            # print(ip.shape)
-            
-            ip = ip.sum(dim=0)  #[1,32,96] [L,N,E]    
+         
+            att_wts = self.softmax_att(self.attn2(self.tanh(self.attn1(torch.cat(  (hp.repeat(hp.shape[0], 1, 1), #[1,32,96]
+                                                                                     hf.repeat(hf.shape[0], 1, 1) )  , 2))))) #[1,32,1]
 
+            ip = att_wts.repeat(1, 1, state_conc.shape[2])*state_conc
+            ip = ip.unsqueeze(1)
+            ip = ip.sum(dim=0)  #[1,32,96] [L,N,E]             
+        
             output_decoder, state_fut = self.decoder(ip, state_fut) #Input batch size 32 doesn't match hidden0 batch size 0
-            # print("After  output_decoder")
             displacement_next = self.FC_output(output_decoder)
-            # print("After FC Layer displacement_next")
             coords_next = present + displacement_next.squeeze(0).unsqueeze(1)
             prediction = torch.cat((prediction, coords_next), 1)
             present = coords_next
