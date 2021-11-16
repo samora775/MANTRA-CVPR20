@@ -101,6 +101,9 @@ class Trainer():
         self.writer.add_text('Training Configuration', 'batch_size: {}'.format(self.config.batch_size), 0)
         self.writer.add_text('Training Configuration', 'learning rate init: {}'.format(self.config.learning_rate), 0)
         self.writer.add_text('Training Configuration', 'dim_embedding_key: {}'.format(self.config.dim_embedding_key), 0)
+        
+        #self.writer.add_graph(self.model)
+
 
     def write_details(self):
         """
@@ -134,11 +137,10 @@ class Trainer():
         for param in self.mem_n2n.decoder.parameters():
             param.requires_grad = False
 
-        # for param in self.mem_n2n.att1.parameters():
-        #     param.requires_grad = False
-        
-        # for param in self.mem_n2n.att2.parameters():
-        #     param.requires_grad = False
+        for param in self.mem_n2n.att1.parameters():
+            param.requires_grad = False
+        for param in self.mem_n2n.att2.parameters():
+            param.requires_grad = False
             
         for param in self.mem_n2n.FC_output.parameters():
             param.requires_grad = False
